@@ -52,7 +52,7 @@ describe('AuthService', () => {
         'jwt.refreshSecret': 'test-refresh-secret',
         'jwt.refreshExpiresIn': '30d',
         appUrl: 'http://localhost:3000',
-        appName: 'Easyland Test',
+        appName: 'RMS Test',
       };
       return config[key] ?? defaultVal;
     }),

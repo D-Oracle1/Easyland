@@ -1,7 +1,7 @@
 {
-  "name": "@easyland/backend",
+  "name": "@rms/backend",
   "version": "1.0.0",
-  "description": "Easyland - Backend API Server",
+  "description": "RMS Platform - Backend API Server",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

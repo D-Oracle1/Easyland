@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Easyland — Database Restore Script
+# RMS Platform — Database Restore Script
 # =============================================================================
 # Usage:
 #   ./scripts/restore.sh --db master --file path/to/backup.sql.gz

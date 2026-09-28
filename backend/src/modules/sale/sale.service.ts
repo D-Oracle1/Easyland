@@ -755,7 +755,7 @@ export class SaleService {
         orderBy: { saleDate: 'desc' },
         include: {
           property: {
-            select: { title: true, address: true, city: true, type: true },
+            select: { title: true, address: true, city: true },
           },
           realtor: {
             include: {
@@ -767,7 +767,7 @@ export class SaleService {
           client: {
             include: {
               user: {
-                select: { firstName: true, lastName: true, email: true, phone: true },
+                select: { firstName: true, lastName: true },
               },
             },
           },

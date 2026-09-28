@@ -2,3 +2,4 @@
 
 # Generated Prisma clients (created at build time)
 src/generated/
+.env*

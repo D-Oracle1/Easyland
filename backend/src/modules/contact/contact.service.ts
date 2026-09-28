@@ -33,7 +33,7 @@ export class ContactService {
     // Retrieve admin email from platform settings or fall back to env
     let adminEmail = this.configService.get<string>('CONTACT_ADMIN_EMAIL')
       || this.configService.get<string>('email.from')
-      || 'admin@easyland.com';
+      || 'admin@rms-platform.com';
 
     try {
       const setting = await (this.masterPrisma as any).platformSetting?.findUnique({

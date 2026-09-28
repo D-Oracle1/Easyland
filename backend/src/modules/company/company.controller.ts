@@ -35,11 +35,11 @@ class AssignRoleDto {
 }
 
 class RegisterExistingDbDto {
-  @ApiProperty({ example: 'Easyland' })
+  @ApiProperty({ example: 'RMS Platform' })
   @IsString()
   name: string;
 
-  @ApiProperty({ example: 'easyland' })
+  @ApiProperty({ example: 'rms-platform' })
   @IsString()
   @Matches(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, { message: 'Slug must be lowercase alphanumeric with hyphens' })
   slug: string;
@@ -121,17 +121,12 @@ export class CompanyController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'hierarchy', required: false, type: Boolean, description: 'Return parent+subsidiary tree' })
   @ApiResponse({ status: 200, description: 'Paginated companies list' })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('hierarchy') hierarchy?: string,
   ) {
-    if (hierarchy === 'true') {
-      return this.companyService.findAllWithHierarchy();
-    }
     return this.companyService.findAll({ page, limit, search });
   }
 

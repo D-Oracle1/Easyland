@@ -127,7 +127,7 @@ export class TwoFaService {
       twoFactorRecoveryCodes: backupCodes,
     });
 
-    const appName = 'Easyland';
+    const appName = 'RMS Platform';
     const qrCodeUrl = `otpauth://totp/${encodeURIComponent(appName)}:${encodeURIComponent(user.email)}?secret=${secret}&issuer=${encodeURIComponent(appName)}&algorithm=SHA1&digits=6&period=30`;
 
     return { secret, qrCodeUrl, backupCodes };

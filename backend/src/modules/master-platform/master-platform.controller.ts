@@ -23,7 +23,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
 class UpdateBrandingDto {
-  @ApiPropertyOptional({ example: 'Easyland' })
+  @ApiPropertyOptional({ example: 'RMS Platform' })
   @IsOptional()
   @IsString()
   platformName?: string;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Easyland — Automated PostgreSQL Backup Script
+# RMS Platform — Automated PostgreSQL Backup Script
 # =============================================================================
 # Usage:
 #   ./scripts/backup.sh                  # backup all databases
