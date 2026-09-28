@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CommissionService } from './commission.service';
 import { PrismaService } from '../../database/prisma.service';
 import { SettingsService } from '../settings/settings.service';
+import { NotificationService } from '../notification/notification.service';
 
 describe('CommissionService', () => {
   let service: CommissionService;
@@ -29,6 +30,7 @@ describe('CommissionService', () => {
         CommissionService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: SettingsService, useValue: mockSettingsService },
+        { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();
 
@@ -43,20 +45,8 @@ describe('CommissionService', () => {
   });
 
   describe('getCommissionRate', () => {
-    it('should return 3% for BRONZE tier', () => {
-      expect(service.getCommissionRate('BRONZE' as any)).toBe(0.03);
-    });
-
-    it('should return 3.5% for SILVER tier', () => {
-      expect(service.getCommissionRate('SILVER' as any)).toBe(0.035);
-    });
-
-    it('should return 4% for GOLD tier', () => {
-      expect(service.getCommissionRate('GOLD' as any)).toBe(0.04);
-    });
-
-    it('should return 5% for PLATINUM tier', () => {
-      expect(service.getCommissionRate('PLATINUM' as any)).toBe(0.05);
+    it.each(['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'])('should return the flat 12%% for %s', (tier) => {
+      expect(service.getCommissionRate(tier as any)).toBe(0.12);
     });
   });
 

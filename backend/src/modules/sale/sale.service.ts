@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { RecordPaymentDto } from './dto/record-payment.dto';
@@ -11,9 +11,12 @@ import { ClientService } from '../client/client.service';
 import { SettingsService } from '../settings/settings.service';
 import { LedgerService } from '../accounting/ledger.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { tierForSalesValue, tierRank, TIER_VALUE_THRESHOLDS } from '../loyalty/tiers';
 
 @Injectable()
 export class SaleService {
+  private readonly logger = new Logger(SaleService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => CommissionService))
@@ -81,15 +84,13 @@ export class SaleService {
     }
 
     // Commission and tax rates are always read from configurable settings
-    const [commissionRates, taxRate] = realtorProfile
+    // Commission is a flat rate for every tier; no realtor means no commission.
+    const [commissionRate, taxRate] = realtorProfile
       ? await Promise.all([
-          this.settingsService.getCommissionRates(),
+          this.settingsService.getFlatCommissionRate(),
           this.settingsService.getMainTaxRate(),
         ])
-      : [{ [LoyaltyTier.BRONZE]: 0.03 }, 0];
-    const commissionRate = realtorProfile
-      ? (commissionRates[realtorProfile.loyaltyTier as string] ?? 0.03)
-      : 0;
+      : [0, 0];
 
     const isInstallment = createSaleDto.paymentPlan === 'INSTALLMENT';
     const totalSalePrice = Number(createSaleDto.saleValue);
@@ -654,6 +655,13 @@ export class SaleService {
       },
     });
 
+    const totalSalesValue = Number(stats._sum.salePrice || 0);
+    const previous = await this.prisma.realtorProfile.findUnique({
+      where: { id: realtorId },
+      select: { loyaltyTier: true, userId: true },
+    });
+    const newTier = tierForSalesValue(totalSalesValue);
+
     await this.prisma.realtorProfile.update({
       where: { id: realtorId },
       data: {
@@ -661,8 +669,25 @@ export class SaleService {
         totalSalesValue: stats._sum.salePrice || 0,
         totalCommission: stats._sum.commissionAmount || 0,
         totalTaxPaid: stats._sum.taxAmount || 0,
+        loyaltyTier: newTier,
       },
     });
+
+    if (previous && tierRank(newTier) > tierRank(previous.loyaltyTier)) {
+      try {
+        await this.notificationService.create({
+          userId: previous.userId,
+          type: 'LOYALTY',
+          title: `Level up! You reached ${newTier}`,
+          message: `Your total sales passed ₦${TIER_VALUE_THRESHOLDS[newTier].toLocaleString()}. Your ${newTier} badge is now on your profile.`,
+          priority: 'HIGH',
+          data: { levelUp: true, tier: newTier, previousTier: previous.loyaltyTier },
+          link: '/dashboard/realtor/loyalty',
+        });
+      } catch (err: any) {
+        this.logger.warn(`Level-up notification failed for realtor ${realtorId}: ${err.message}`);
+      }
+    }
   }
 
   private async updateClientStats(clientId: string, purchaseValue: number) {
@@ -1007,6 +1032,11 @@ export class SaleService {
       },
     });
 
+    // A cancelled sale no longer counts toward the realtor's totals / tier
+    if (status === SaleStatus.CANCELLED && sale.realtorId) {
+      await this.updateRealtorStats(sale.realtorId);
+    }
+
     return updatedSale;
   }
 
@@ -1025,6 +1055,9 @@ export class SaleService {
     await this.prisma.commission.deleteMany({ where: { saleId: id } });
     await this.prisma.tax.deleteMany({ where: { saleId: id } });
     await this.prisma.sale.delete({ where: { id } });
+
+    // Privileged users can delete non-cancelled sales — keep totals / tier in sync
+    if (sale.realtorId) await this.updateRealtorStats(sale.realtorId);
 
     return { success: true, message: 'Sale deleted' };
   }

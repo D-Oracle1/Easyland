@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { FLAT_COMMISSION_RATE } from '../loyalty/tiers';
 
+// Commission is flat across tiers; per-tier keys are kept for the settings API.
 const DEFAULT_COMMISSION_RATES = {
-  BRONZE: 0.03,
-  SILVER: 0.035,
-  GOLD: 0.04,
-  PLATINUM: 0.05,
+  BRONZE: FLAT_COMMISSION_RATE,
+  SILVER: FLAT_COMMISSION_RATE,
+  GOLD: FLAT_COMMISSION_RATE,
+  PLATINUM: FLAT_COMMISSION_RATE,
 };
 
 const DEFAULT_TAX_RATES = {
@@ -47,11 +49,28 @@ export class SettingsService {
     return rates;
   }
 
+  /**
+   * The single commission rate applied to every realtor regardless of tier.
+   * Reads `commission_rate`, falling back to the legacy `commission_bronze`
+   * key, then to FLAT_COMMISSION_RATE (12%).
+   */
+  async getFlatCommissionRate(): Promise<number> {
+    for (const key of ['commission_rate', 'commission_bronze']) {
+      const val = await this.getSetting(key);
+      const n = val === null ? NaN : Number(val);
+      if (Number.isFinite(n) && n >= 0) return n;
+    }
+    return FLAT_COMMISSION_RATE;
+  }
+
   async updateCommissionRates(rates: Record<string, number>): Promise<Record<string, number>> {
     for (const [tier, rate] of Object.entries(rates)) {
       const key = `commission_${tier.toLowerCase()}`;
       await this.upsertSetting(key, rate);
     }
+    // Keep the flat rate in step with what the admin saved
+    const flat = rates.BRONZE ?? Object.values(rates)[0];
+    if (flat !== undefined) await this.upsertSetting('commission_rate', flat);
     return this.getCommissionRates();
   }
 

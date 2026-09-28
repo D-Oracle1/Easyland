@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { LoyaltyTier } from '@prisma/client';
+import { FLAT_COMMISSION_RATE, TIER_VALUE_THRESHOLDS, nextTier } from './tiers';
 
 @Injectable()
 export class LoyaltyService {
@@ -10,13 +11,6 @@ export class LoyaltyService {
     [LoyaltyTier.SILVER]: 1.25,
     [LoyaltyTier.GOLD]: 1.5,
     [LoyaltyTier.PLATINUM]: 2,
-  };
-
-  private readonly TIER_THRESHOLDS = {
-    [LoyaltyTier.BRONZE]: 0,
-    [LoyaltyTier.SILVER]: 5000,
-    [LoyaltyTier.GOLD]: 15000,
-    [LoyaltyTier.PLATINUM]: 50000,
   };
 
   private readonly ACHIEVEMENTS = {
@@ -56,24 +50,20 @@ export class LoyaltyService {
         points,
         source: 'SALE',
         saleId: data.saleId,
-        description: `Points for sale worth $${data.saleValue.toLocaleString()}`,
+        description: `Points for sale worth ₦${data.saleValue.toLocaleString()}`,
       },
     });
 
-    // Update realtor's total points
-    const newTotalPoints = realtor.loyaltyPoints + points;
-
-    // Check for tier upgrade
-    const newTier = this.calculateTier(newTotalPoints);
-
-    // Check for achievements
+    // Achievements add their own bonus points (awardBonusPoints increments)
     const achievements = await this.checkAchievements(data.realtorId, realtor);
 
+    // Increment rather than overwrite with a stale total, so bonus points
+    // awarded above are not lost. Tier is NOT set here — it is derived from
+    // total sales value in SaleService.updateRealtorStats.
     await this.prisma.realtorProfile.update({
       where: { id: data.realtorId },
       data: {
-        loyaltyPoints: newTotalPoints,
-        loyaltyTier: newTier,
+        loyaltyPoints: { increment: points },
         achievements: {
           set: achievements,
         },
@@ -81,17 +71,6 @@ export class LoyaltyService {
     });
 
     return points;
-  }
-
-  private calculateTier(points: number): LoyaltyTier {
-    if (points >= this.TIER_THRESHOLDS[LoyaltyTier.PLATINUM]) {
-      return LoyaltyTier.PLATINUM;
-    } else if (points >= this.TIER_THRESHOLDS[LoyaltyTier.GOLD]) {
-      return LoyaltyTier.GOLD;
-    } else if (points >= this.TIER_THRESHOLDS[LoyaltyTier.SILVER]) {
-      return LoyaltyTier.SILVER;
-    }
-    return LoyaltyTier.BRONZE;
   }
 
   private async checkAchievements(realtorId: string, realtor: any): Promise<string[]> {
@@ -148,6 +127,11 @@ export class LoyaltyService {
         description,
       },
     });
+    // Previously only logged, never added to the realtor's total
+    await this.prisma.realtorProfile.update({
+      where: { id: realtorId },
+      data: { loyaltyPoints: { increment: points } },
+    });
   }
 
   async getRealtorLoyalty(realtorId: string) {
@@ -170,51 +154,50 @@ export class LoyaltyService {
       take: 20,
     });
 
-    const nextTier = this.getNextTier(realtor.loyaltyTier);
-    const pointsToNextTier = nextTier
-      ? this.TIER_THRESHOLDS[nextTier] - realtor.loyaltyPoints
-      : 0;
-    const progressToNextTier = nextTier
-      ? (realtor.loyaltyPoints / this.TIER_THRESHOLDS[nextTier]) * 100
+    // Tier progress is measured in ₦ of sales value (see tiers.ts)
+    const totalSalesValue = Number(realtor.totalSalesValue);
+    const upcoming = nextTier(realtor.loyaltyTier);
+    const currentFloor = TIER_VALUE_THRESHOLDS[realtor.loyaltyTier];
+    const nextThreshold = upcoming ? TIER_VALUE_THRESHOLDS[upcoming] : null;
+    const progressToNextTier = nextThreshold
+      ? ((totalSalesValue - currentFloor) / (nextThreshold - currentFloor)) * 100
       : 100;
 
     return {
       currentTier: realtor.loyaltyTier,
       totalPoints: realtor.loyaltyPoints,
-      nextTier,
-      pointsToNextTier: Math.max(0, pointsToNextTier),
-      progressToNextTier: Math.min(100, progressToNextTier),
+      totalSalesValue,
+      nextTier: upcoming,
+      nextTierThreshold: nextThreshold,
+      valueToNextTier: nextThreshold ? Math.max(0, nextThreshold - totalSalesValue) : 0,
+      progressToNextTier: Math.max(0, Math.min(100, progressToNextTier)),
+      tierThresholds: TIER_VALUE_THRESHOLDS,
       achievements: realtor.achievements,
       pointsHistory,
       tierBenefits: this.getTierBenefits(realtor.loyaltyTier),
     };
   }
 
-  private getNextTier(currentTier: LoyaltyTier): LoyaltyTier | null {
-    const tierOrder = [LoyaltyTier.BRONZE, LoyaltyTier.SILVER, LoyaltyTier.GOLD, LoyaltyTier.PLATINUM];
-    const currentIndex = tierOrder.indexOf(currentTier);
-    return currentIndex < tierOrder.length - 1 ? tierOrder[currentIndex + 1] : null;
-  }
-
   private getTierBenefits(tier: LoyaltyTier) {
+    const commissionRate = `${FLAT_COMMISSION_RATE * 100}%`; // flat for every tier
     const benefits = {
       [LoyaltyTier.BRONZE]: {
-        commissionRate: '3%',
+        commissionRate,
         pointsMultiplier: '1x',
         perks: ['Basic dashboard access', 'Standard support'],
       },
       [LoyaltyTier.SILVER]: {
-        commissionRate: '3.5%',
+        commissionRate,
         pointsMultiplier: '1.25x',
         perks: ['Enhanced dashboard', 'Priority support', 'Monthly reports'],
       },
       [LoyaltyTier.GOLD]: {
-        commissionRate: '4%',
+        commissionRate,
         pointsMultiplier: '1.5x',
         perks: ['Premium dashboard', 'Dedicated support', 'Weekly reports', 'Exclusive listings'],
       },
       [LoyaltyTier.PLATINUM]: {
-        commissionRate: '5%',
+        commissionRate,
         pointsMultiplier: '2x',
         perks: ['VIP dashboard', 'Personal account manager', 'Daily reports', 'First access to new listings', 'Exclusive events'],
       },
@@ -224,7 +207,7 @@ export class LoyaltyService {
 
   async getLeaderboard(limit: number = 10) {
     return this.prisma.realtorProfile.findMany({
-      orderBy: { loyaltyPoints: 'desc' },
+      orderBy: { totalSalesValue: 'desc' },
       take: limit,
       include: {
         user: {

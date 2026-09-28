@@ -3,6 +3,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { CommissionStatus, LoyaltyTier } from '@prisma/client';
 import { SettingsService } from '../settings/settings.service';
 import { NotificationService } from '../notification/notification.service';
+import { FLAT_COMMISSION_RATE } from '../loyalty/tiers';
 
 @Injectable()
 export class CommissionService {
@@ -12,12 +13,12 @@ export class CommissionService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  // Fallback commission rates by tier
+  // Commission is flat across tiers (tier only affects the badge/rank)
   private readonly COMMISSION_RATES = {
-    [LoyaltyTier.BRONZE]: 0.03,
-    [LoyaltyTier.SILVER]: 0.035,
-    [LoyaltyTier.GOLD]: 0.04,
-    [LoyaltyTier.PLATINUM]: 0.05,
+    [LoyaltyTier.BRONZE]: FLAT_COMMISSION_RATE,
+    [LoyaltyTier.SILVER]: FLAT_COMMISSION_RATE,
+    [LoyaltyTier.GOLD]: FLAT_COMMISSION_RATE,
+    [LoyaltyTier.PLATINUM]: FLAT_COMMISSION_RATE,
   };
 
   async create(data: {
@@ -313,15 +314,15 @@ export class CommissionService {
   }
 
   getCommissionRate(tier: LoyaltyTier): number {
-    return this.COMMISSION_RATES[tier] || 0.03;
+    return this.COMMISSION_RATES[tier] ?? FLAT_COMMISSION_RATE;
   }
 
-  async getCommissionRateFromSettings(tier: LoyaltyTier): Promise<number> {
+  // `tier` is kept for API compatibility; the rate is the same for every tier.
+  async getCommissionRateFromSettings(_tier: LoyaltyTier): Promise<number> {
     try {
-      const rates = await this.settingsService.getCommissionRates();
-      return rates[tier] ?? this.COMMISSION_RATES[tier] ?? 0.03;
+      return await this.settingsService.getFlatCommissionRate();
     } catch {
-      return this.COMMISSION_RATES[tier] || 0.03;
+      return FLAT_COMMISSION_RATE;
     }
   }
 

@@ -36,8 +36,20 @@ describe('SettingsService', () => {
     it('should return default rates when no settings stored', async () => {
       (prisma.systemSetting.findUnique as jest.Mock).mockResolvedValue(null);
       const rates = await service.getCommissionRates();
-      expect(rates.BRONZE).toBe(0.03);
-      expect(rates.GOLD).toBe(0.04);
+      expect(rates.BRONZE).toBe(0.12);
+      expect(rates.GOLD).toBe(0.12);
+    });
+  });
+
+  describe('getFlatCommissionRate', () => {
+    it('should default to 12% when no settings stored', async () => {
+      (prisma.systemSetting.findUnique as jest.Mock).mockResolvedValue(null);
+      expect(await service.getFlatCommissionRate()).toBe(0.12);
+    });
+
+    it('should use the stored commission_rate', async () => {
+      (prisma.systemSetting.findUnique as jest.Mock).mockResolvedValue({ value: 0.1 });
+      expect(await service.getFlatCommissionRate()).toBe(0.1);
     });
   });
 

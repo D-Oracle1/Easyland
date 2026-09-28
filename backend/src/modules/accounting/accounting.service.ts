@@ -696,8 +696,9 @@ export class AccountingService {
   // ─── Recalculate All Financials ───────────────────────────────────────────────
 
   async recalculateAllFinancials() {
-    const [commissionRates, taxRate] = await Promise.all([
+    const [commissionRates, flatCommissionRate, taxRate] = await Promise.all([
       this.settingsService.getCommissionRates(),
+      this.settingsService.getFlatCommissionRate(),
       this.settingsService.getMainTaxRate(),
     ]);
 
@@ -715,7 +716,7 @@ export class AccountingService {
     for (const sale of sales) {
       if (!sale.realtorId || !sale.realtor) continue;
 
-      const commissionRate = commissionRates[sale.realtor.loyaltyTier as string] ?? 0.03;
+      const commissionRate = flatCommissionRate; // flat for every tier
       const baseAmount      = sale.paymentPlan === 'INSTALLMENT' ? Number(sale.totalPaid) : Number(sale.salePrice);
       const totalCommission = baseAmount * commissionRate;
       const totalTax        = totalCommission * taxRate;
