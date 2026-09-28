@@ -17,6 +17,7 @@ CREATE OR REPLACE FUNCTION public.rls_is_app_schema(schema_name text)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
+SET search_path = ''
 AS $$
   SELECT schema_name NOT LIKE 'pg\_%'
      AND schema_name NOT LIKE '\_%'
@@ -48,6 +49,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.rls_auto_enable()
 RETURNS event_trigger
 LANGUAGE plpgsql
+SET search_path = ''
 AS $$
 DECLARE
   cmd record;
