@@ -30,6 +30,29 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.vercel.app' },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+          // camera/mic: calls, voice notes, QR scanner; geolocation: attendance
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), browsing-topics=()',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
