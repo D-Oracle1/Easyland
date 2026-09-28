@@ -448,7 +448,7 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string) {
+  async refreshTokens(refreshToken: string, companyId?: string | null) {
     const storedToken = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
       include: { user: true },
@@ -463,8 +463,18 @@ export class AuthService {
       where: { id: storedToken.id },
     });
 
-    // Generate new tokens
-    return this.generateTokens(storedToken.user);
+    // Generate new tokens — keep the tenant so the new access token still
+    // resolves to the right company DB (it was previously dropped here).
+    return this.generateTokens(storedToken.user, companyId);
+  }
+
+  /** Revoke a single refresh token by value (tokens are unique UUIDs). */
+  async revokeRefreshToken(refreshToken: string) {
+    try {
+      await this.prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+    } catch (err: any) {
+      this.logger.warn(`Could not revoke refresh token: ${err.message}`);
+    }
   }
 
   async logout(userId: string, refreshToken?: string) {

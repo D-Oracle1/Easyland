@@ -30,6 +30,9 @@ import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { setAuthCookies, clearAuthCookies, readCookie, REFRESH_COOKIE } from './auth-cookies';
+
+const REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -58,9 +61,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const companyId = req.tenant?.companyId || null;
-    return this.authService.login(loginDto, companyId);
+    const result = await this.authService.login(loginDto, companyId);
+    setAuthCookies(res, result, REFRESH_EXPIRES_IN);
+    return result;
   }
 
   @Post('refresh')
@@ -69,21 +78,37 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshTokens(refreshTokenDto.refreshToken);
+  async refreshTokens(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = refreshTokenDto.refreshToken || readCookie(req, REFRESH_COOKIE);
+    if (!refreshToken) {
+      throw new HttpException('Refresh token missing', HttpStatus.UNAUTHORIZED);
+    }
+    const tokens = await this.authService.refreshTokens(refreshToken, req.tenant?.companyId || null);
+    setAuthCookies(res, tokens, REFRESH_EXPIRES_IN);
+    return tokens;
   }
 
+  // Public so an expired access token can still clear the HttpOnly cookies
+  // (JS cannot) and revoke the refresh token.
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
   async logout(
-    @CurrentUser('id') userId: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
     @Body('refreshToken') refreshToken?: string,
   ) {
-    return this.authService.logout(userId, refreshToken);
+    clearAuthCookies(res);
+    const token = refreshToken || readCookie(req, REFRESH_COOKIE);
+    if (token) await this.authService.revokeRefreshToken(token);
+    return { message: 'Logged out successfully' };
   }
 
   @Post('change-password')

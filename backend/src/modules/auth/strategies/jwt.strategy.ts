@@ -5,6 +5,21 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { MasterPrismaService } from '../../../database/master-prisma.service';
 import { TenantPrismaService } from '../../../database/tenant-prisma.service';
+import { ACCESS_COOKIE, readCookie } from '../auth-cookies';
+
+const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+
+/**
+ * HttpOnly cookie first (browser sessions), then Authorization: Bearer
+ * (legacy clients / scripts). Non-JWT header values such as "Bearer null"
+ * are ignored so they cannot shadow a valid cookie.
+ */
+function extractJwt(req: any): string | null {
+  const fromCookie = readCookie(req, ACCESS_COOKIE);
+  if (fromCookie && JWT_SHAPE.test(fromCookie)) return fromCookie;
+  const fromHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+  return fromHeader && JWT_SHAPE.test(fromHeader) ? fromHeader : null;
+}
 
 interface JwtPayload {
   sub: string;
@@ -37,7 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly tenantPrisma: TenantPrismaService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: extractJwt,
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('jwt.secret'),
     });
