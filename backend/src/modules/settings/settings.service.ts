@@ -36,17 +36,10 @@ export class SettingsService {
     });
   }
 
+  /** Per-tier view of the flat rate (kept for existing API consumers). */
   async getCommissionRates(): Promise<Record<string, number>> {
-    const rates: Record<string, number> = { ...DEFAULT_COMMISSION_RATES };
-
-    for (const tier of Object.keys(DEFAULT_COMMISSION_RATES)) {
-      const val = await this.getSetting(`commission_${tier.toLowerCase()}`);
-      if (val !== null) {
-        rates[tier] = typeof val === 'number' ? val : Number(val);
-      }
-    }
-
-    return rates;
+    const flat = await this.getFlatCommissionRate();
+    return Object.fromEntries(Object.keys(DEFAULT_COMMISSION_RATES).map((tier) => [tier, flat]));
   }
 
   /**

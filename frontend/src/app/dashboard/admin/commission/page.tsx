@@ -230,12 +230,6 @@ export default function CommissionPage() {
     }
   };
 
-  const handleRateChange = (tier: string, newRate: number) => {
-    setEditingRates(prev => prev.map(r =>
-      r.tier === tier ? { ...r, rate: newRate } : r
-    ));
-  };
-
   const generateReceipt = (commission: typeof commissions[0]) => {
     const taxRate = 15;
     const taxAmount = commission.commission * (taxRate / 100);
@@ -373,18 +367,10 @@ export default function CommissionPage() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {tierRates.map((tier) => (
-                <div key={tier.tier} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge className={getTierBgClass(tier.tier)}>{tier.tier}</Badge>
-                    <span className="text-xl font-bold text-primary">{tier.rate}%</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{tier.realtors} realtors</span>
-                    <span>Min. {tier.minSales} sales</span>
-                  </div>
-                </div>
-              ))}
+              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center">
+                <p className="text-3xl font-bold text-primary">{tierRates[0]?.rate ?? 0}%</p>
+                <p className="text-sm text-muted-foreground mt-1">Flat rate for every realtor, all tiers</p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -510,29 +496,29 @@ export default function CommissionPage() {
               Edit Commission Rates
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {editingRates.map((tier) => (
-              <div key={tier.tier} className="flex items-center gap-4">
-                <Badge className={`${getTierBgClass(tier.tier)} w-24 justify-center`}>{tier.tier}</Badge>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      value={tier.rate}
-                      onChange={(e) => handleRateChange(tier.tier, parseFloat(e.target.value) || 0)}
-                      className="w-24"
-                    />
-                    <span className="text-muted-foreground">%</span>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {tier.realtors} realtors
-                </div>
-              </div>
-            ))}
+          <div className="space-y-3 py-4">
+            {/* Commission is flat: one rate, saved to every tier */}
+            <label className="text-sm font-medium" htmlFor="flat-commission-rate">Commission rate (all tiers)</label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="flat-commission-rate"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={editingRates[0]?.rate ?? 0}
+                onChange={(e) => {
+                  const rate = parseFloat(e.target.value) || 0;
+                  setEditingRates((prev) => prev.map((t) => ({ ...t, rate })));
+                }}
+                className="w-28"
+              />
+              <span className="text-muted-foreground">%</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Every realtor earns this rate regardless of their Bronze/Silver/Gold/Platinum rank. Saving also
+              recalculates existing commission records.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRateSettings(false)}>
