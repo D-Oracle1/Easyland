@@ -204,6 +204,23 @@ export class TenantPrismaService implements OnModuleDestroy {
         await tenantPg.query(`SET search_path TO "${schemaName}"`).catch(() => {});
         await this.applyStatementsWithPg(tenantPg, sql, schemaName);
       }
+
+      // Enable RLS on every tenant table (blocks the Supabase REST API; Prisma's
+      // postgres role bypasses RLS). The DB's rls_auto_enable event trigger
+      // normally does this already — this covers DBs without the trigger.
+      await tenantPg.query(`
+        DO $$
+        DECLARE r record;
+        BEGIN
+          FOR r IN
+            SELECT format('%I.%I', n.nspname, c.relname) AS tbl
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = '${schemaName}' AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity
+          LOOP
+            EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', r.tbl);
+          END LOOP;
+        END $$;
+      `);
     } finally {
       await tenantPg.end();
     }

@@ -1,58 +1,75 @@
 -- ===========================================
 -- Easyland - Supabase Row Level Security
 -- ===========================================
--- Enable Row Level Security on all public tables
--- This blocks access via Supabase REST API (anon key) while Prisma (postgres superuser) bypasses RLS
--- Run this AFTER running prisma db push or applying migration.sql
+-- Enables RLS on every app table and installs an event trigger so that any
+-- table created later (Prisma migrations, db push, tenant provisioning, raw SQL)
+-- gets RLS enabled automatically.
+--
+-- No policies are defined: this blocks the Supabase REST/GraphQL API (anon and
+-- authenticated keys), while Prisma connects as `postgres` (BYPASSRLS) and is
+-- unaffected.
+--
+-- Idempotent. Run against the master DB and every tenant DB.
+-- Supabase-managed schemas (auth, storage, realtime, vault, ...) are left alone.
 
--- Core tables
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.refresh_tokens ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.admin_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.realtor_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.client_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
+-- Schemas owned by Postgres/Supabase that must not be touched
+CREATE OR REPLACE FUNCTION public.rls_is_app_schema(schema_name text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT schema_name NOT LIKE 'pg\_%'
+     AND schema_name NOT LIKE '\_%'
+     AND schema_name NOT IN (
+       'information_schema', 'auth', 'storage', 'realtime', 'vault',
+       'extensions', 'graphql', 'graphql_public', 'pgbouncer', 'net', 'cron',
+       'pgsodium', 'pgsodium_masks', 'supabase_functions', 'supabase_migrations'
+     );
+$$;
 
--- Property & Sales tables
-ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.commissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.taxes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.price_history ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+-- 1. Backfill: enable RLS on all existing app tables
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT format('%I.%I', n.nspname, c.relname) AS tbl
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE c.relkind IN ('r', 'p')
+      AND NOT c.relrowsecurity
+      AND public.rls_is_app_schema(n.nspname)
+  LOOP
+    EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', r.tbl);
+  END LOOP;
+END $$;
 
--- Loyalty & Rankings
-ALTER TABLE public.loyalty_points ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.rankings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.monthly_awards ENABLE ROW LEVEL SECURITY;
+-- 2. Event trigger: enable RLS on every newly created app table
+CREATE OR REPLACE FUNCTION public.rls_auto_enable()
+RETURNS event_trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  cmd record;
+BEGIN
+  FOR cmd IN
+    SELECT * FROM pg_event_trigger_ddl_commands()
+    WHERE object_type IN ('table', 'partitioned table')
+  LOOP
+    IF public.rls_is_app_schema(cmd.schema_name) THEN
+      BEGIN
+        EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', cmd.object_identity);
+      EXCEPTION WHEN OTHERS THEN
+        -- Never block the DDL itself (e.g. table owned by another role)
+        RAISE WARNING 'rls_auto_enable: could not enable RLS on %: %', cmd.object_identity, SQLERRM;
+      END;
+    END IF;
+  END LOOP;
+END;
+$$;
 
--- Notifications & Audit
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
--- Chat tables
-ALTER TABLE public.chat_rooms ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public."_ChatParticipants" ENABLE ROW LEVEL SECURITY;
-
--- Staff & HR tables
-ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.staff_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.staff_permissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.performance_reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payroll_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.staff_tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.task_comments ENABLE ROW LEVEL SECURITY;
-
--- Team Communication tables
-ALTER TABLE public.team_channels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.channel_members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.channel_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.mentions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.message_reactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.shared_files ENABLE ROW LEVEL SECURITY;
+DROP EVENT TRIGGER IF EXISTS rls_auto_enable;
+CREATE EVENT TRIGGER rls_auto_enable
+  ON ddl_command_end
+  WHEN TAG IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+  EXECUTE FUNCTION public.rls_auto_enable();
