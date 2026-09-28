@@ -7,6 +7,7 @@ import { SupportChatWidget } from '@/components/support/support-chat-widget';
 import { BrandingTitle } from '@/components/branding-title';
 import { BrandingGate } from '@/components/branding-gate';
 import { PWASplashScreen } from '@/components/pwa-splash-screen';
+import { CookieConsent } from '@/components/cookie-consent';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -102,6 +103,7 @@ export default function RootLayout({
             <SupportChatWidget />
           </BrandingGate>
           <Toaster position="top-right" richColors closeButton />
+          <CookieConsent />
         </Providers>
       </body>
     </html>
