@@ -185,10 +185,17 @@ export async function POST(req: NextRequest) {
     perm ? `Present: ${perm}` : 'Not set — optional but recommended to restrict browser features.');
 
   // --- Information exposure ---------------------------------------------
+  // A bare platform name (e.g. "Vercel", which the platform always sends and
+  // cannot be removed) is not a meaningful disclosure; a version number is.
   const server = headers && has(headers, 'server');
+  const serverRevealsVersion = !!server && /\d/.test(server);
   add('server_header', 'Server banner exposure', 'Application Security',
-    server ? 'warn' : 'pass',
-    server ? `Server header reveals: ${server}` : 'No revealing Server banner.');
+    serverRevealsVersion ? 'warn' : 'pass',
+    !server
+      ? 'No revealing Server banner.'
+      : serverRevealsVersion
+        ? `Server header reveals version: ${server}`
+        : `Server header names the host platform only (${server}), no version disclosed.`);
 
   const poweredBy = headers && has(headers, 'x-powered-by');
   add('powered_by', 'X-Powered-By exposure', 'Application Security',
@@ -211,7 +218,8 @@ export async function POST(req: NextRequest) {
         ? `${insecure.length} of ${cookies.length} set-cookie header(s) missing Secure/HttpOnly.`
         : 'All set-cookie headers carry Secure + HttpOnly.');
   } else {
-    add('cookie_flags', 'Cookie security flags', 'Application Security', 'info',
+    // Nothing to steal or mis-flag — the safest outcome, so it passes.
+    add('cookie_flags', 'Cookie security flags', 'Application Security', 'pass',
       'No cookies set on the scanned response.');
   }
 
