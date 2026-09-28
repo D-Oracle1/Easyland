@@ -1,14 +1,8 @@
-const isProd = process.env.NODE_ENV === 'production';
-
-const withPWA = isProd
-  ? require("@ducanh2912/next-pwa").default({
-      dest: "public",
-      register: true,
-      skipWaiting: true,
-      // Don't cache JS chunks — always fetch fresh so sidebar/nav updates propagate immediately
-      buildExcludes: [/chunks\/.*\.js$/],
-    })
-  : (config) => config;
+// NOTE: next-pwa was removed. Its precaching service worker served stale
+// assets after deploys and broke client-side navigation until users cleared
+// site data. public/sw.js is now a self-unregistering kill switch that cleans
+// up any previously-installed worker. Do not re-add a precaching SW without a
+// reliable per-deploy cache-busting/update strategy.
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -73,4 +67,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = nextConfig;

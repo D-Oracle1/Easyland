@@ -53,6 +53,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageUrl, api } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { getUser, clearAuth } from '@/lib/auth-storage';
+import { isSocOwner } from '@/lib/security/owner';
 import { useBranding, getShortName } from '@/hooks/use-branding';
 import { usePlatformBranding, getPlatformName } from '@/hooks/use-platform-branding';
 
@@ -74,6 +75,8 @@ interface NavItem {
   icon: any;
   /** Module key used to filter based on department allowedModules. Omit for always-visible items (Dashboard, Settings). */
   moduleKey?: string;
+  /** When true, only the SOC owner account (see lib/security/owner) may see this item. */
+  ownerOnly?: boolean;
 }
 
 interface NavSection {
@@ -233,6 +236,7 @@ const groupedNavigationConfig: Record<string, NavSection[]> = {
     {
       label: 'System',
       items: [
+        { name: 'Security Center', href: '/security-center', icon: Shield, ownerOnly: true },
         { name: 'Audit Logs', href: '/dashboard/admin/audit', icon: FileText, moduleKey: 'audit' },
         { name: 'Referral Tracking', href: '/dashboard/admin/referrals', icon: Share2, moduleKey: 'referrals' },
         { name: 'Notifications', href: '/dashboard/admin/notifications', icon: Bell, moduleKey: 'notifications' },
@@ -307,6 +311,7 @@ export function Sidebar({
     lastName: string;
     role: string;
     avatar?: string;
+    email?: string;
   } | null>(null);
 
   // Department-level module restrictions (null = not loaded yet, [] = no restriction)
@@ -371,6 +376,9 @@ export function Sidebar({
   // Items without a moduleKey (Dashboard, Settings) are always shown.
   // If allowedModules is empty or null, no restriction applies.
   const isModuleAllowed = (item: NavItem) => {
+    // Owner-only items (the private Security Center) are hidden from everyone
+    // except the configured SOC owner account.
+    if (item.ownerOnly && !isSocOwner(currentUser?.email)) return false;
     if (!item.moduleKey) return true;
     if (!allowedModules || allowedModules.length === 0) return true;
     return allowedModules.includes(item.moduleKey);

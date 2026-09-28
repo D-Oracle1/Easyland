@@ -7,7 +7,6 @@ import { SupportChatWidget } from '@/components/support/support-chat-widget';
 import { BrandingTitle } from '@/components/branding-title';
 import { BrandingGate } from '@/components/branding-gate';
 import { PWASplashScreen } from '@/components/pwa-splash-screen';
-import { CacheReset } from '@/components/cache-reset';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -78,7 +77,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <CacheReset />
+        {/*
+          Self-heal: runs on every fresh HTML load, before hydration. It tears
+          down the legacy next-pwa precache worker that served stale assets and
+          broke navigation until users manually cleared site data. Complements
+          the /sw.js kill-switch: the kill-switch heals a stuck browser on its
+          next service-worker update check, while this guarantees the old worker
+          is gone the moment any fresh page is served, and permanently stops it
+          from re-trapping the browser. The push worker (sw-push.js) is left
+          alone so notifications keep working. No forced reload — this only runs
+          on already-fresh HTML, so referenced chunks are already current.
+        */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){var s=r.active||r.waiting||r.installing;var u=(s&&s.scriptURL)||'';if(u.indexOf('/sw-push.js')===-1){r.unregister();}});}).catch(function(){});}if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});}}catch(e){}})();`,
+          }}
+        />
         <Providers>
           <PWASplashScreen />
           <BrandingGate>

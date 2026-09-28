@@ -17,15 +17,25 @@ export function BrandingTitle() {
 
     const applyTitle = () => {
       const current = document.title;
-      // Replace any "Easyland", or "Loading..." with the CMS name
-      if (current === 'Loading...' || current.includes('Easyland')) {
-        document.title = current
-          .replace(/Easyland/g, name)
-          .replace('Loading...', name);
+      // Already branded — stop. This is the critical guard: the MutationObserver
+      // below reacts to our OWN writes, and because `name` itself contains
+      // "Easyland", re-running the replace below would keep matching and rewrite
+      // the title forever ("Easyland Realty Realty..."), pegging the main thread
+      // and triggering Chrome's "page unresponsive" freeze. Once the title
+      // contains the company name we have reached the fixed point — do nothing.
+      if (current.includes(name)) return;
+
+      let next = current;
+      if (current === 'Loading...') {
+        next = name;
+      } else if (current.includes('Easyland')) {
+        next = current.replace(/Easyland/g, name);
       }
-      // If the title is just a page name without branding, append it
-      if (!current.includes(name) && current !== 'Loading...') {
-        // Don't modify if it already has a proper title
+
+      // Only write when something actually changed, so the observer never
+      // fires on a no-op mutation.
+      if (next !== current) {
+        document.title = next;
       }
     };
 
