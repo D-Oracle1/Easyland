@@ -1,232 +1,141 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
-  Award,
-  Star,
-  TrendingUp,
-  Gift,
-  Crown,
-  Zap,
-  Target,
-  CheckCircle,
-} from 'lucide-react';
+import { Loader2, Lock, CheckCircle, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { getTierBgClass } from '@/lib/utils';
-
-const loyaltyData = {
-  currentTier: 'GOLD',
-  points: 12500,
-  nextTier: 'PLATINUM',
-  pointsToNext: 37500,
-  multiplier: 1.5,
-  commissionRate: 4.0,
-};
-
-const tierBenefits = {
-  BRONZE: { rate: 3.0, multiplier: 1.0, benefits: ['Basic Support', 'Standard Listings'] },
-  SILVER: { rate: 3.5, multiplier: 1.25, benefits: ['Priority Support', 'Featured Listings', 'Monthly Reports'] },
-  GOLD: { rate: 4.0, multiplier: 1.5, benefits: ['Premium Support', 'Premium Listings', 'Weekly Reports', 'Marketing Tools'] },
-  PLATINUM: { rate: 4.0, multiplier: 2.0, benefits: ['VIP Support', 'VIP Listings', 'Real-time Analytics', 'Premium Marketing', 'Personal Account Manager'] },
-};
-
-const pointsHistory = [
-  { id: 1, description: 'Sale: Modern Villa in Beverly Hills', points: 2850, date: '2024-01-20' },
-  { id: 2, description: 'Sale: Downtown Luxury Loft', points: 750, date: '2024-01-18' },
-  { id: 3, description: 'Bonus: 5 Sales Milestone', points: 500, date: '2024-01-15' },
-  { id: 4, description: 'Sale: Suburban Family Home', points: 485, date: '2024-01-12' },
-  { id: 5, description: 'Sale: Mountain View Retreat', points: 620, date: '2024-01-10' },
-];
-
-const milestones = [
-  { id: 1, title: 'First Sale', points: 100, completed: true },
-  { id: 2, title: '5 Sales', points: 500, completed: true },
-  { id: 3, title: '10 Sales', points: 1000, completed: true },
-  { id: 4, title: '25 Sales', points: 2500, completed: true },
-  { id: 5, title: '50 Sales', points: 5000, completed: false },
-  { id: 6, title: '100 Sales', points: 10000, completed: false },
-];
-
-const tiers = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'];
+import { formatCurrency } from '@/lib/utils';
+import {
+  TierBadge,
+  TIER_ORDER,
+  TIER_THRESHOLDS,
+  normalizeTier,
+  tierLabel,
+} from '@/components/tier/tier-badge';
+import { useMyLoyalty } from '@/components/tier/use-my-tier';
 
 export default function RealtorLoyaltyPage() {
-  const progressToNextTier = ((loyaltyData.points) / (loyaltyData.points + loyaltyData.pointsToNext)) * 100;
-  const currentTierIndex = tiers.indexOf(loyaltyData.currentTier);
+  const loyalty = useMyLoyalty();
+
+  if (!loyalty) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const tier = normalizeTier(loyalty.currentTier);
+  const tierIndex = TIER_ORDER.indexOf(tier);
+  const next = loyalty.nextTier ? normalizeTier(loyalty.nextTier) : null;
 
   return (
     <div className="space-y-6">
-      {/* Current Status */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <Card className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24" />
-          <CardContent className="p-8 relative">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <Crown className="w-12 h-12" />
-                  <div>
-                    <h2 className="text-3xl font-bold">{loyaltyData.currentTier} Member</h2>
-                    <p className="text-white/80">Loyalty Program Status</p>
+      {/* Current rank */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+          <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-white/5" />
+          <CardContent className="relative p-6 sm:p-8">
+            <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+              <TierBadge tier={tier} size={112} animated />
+              <div className="w-full flex-1 text-center sm:text-left">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">Current rank</p>
+                <h2 className="text-3xl font-extrabold">{tierLabel(tier)} Realtor</h2>
+                <p className="mt-1 text-white/75">
+                  Total sales value: <span className="font-semibold text-white">{formatCurrency(loyalty.totalSalesValue)}</span>
+                </p>
+
+                {next ? (
+                  <div className="mt-5">
+                    <div className="mb-2 flex justify-between text-sm">
+                      <span>Progress to {tierLabel(next)}</span>
+                      <span className="font-semibold">{Math.floor(loyalty.progressToNextTier)}%</span>
+                    </div>
+                    <Progress value={loyalty.progressToNextTier} className="h-3 bg-white/20" />
+                    <p className="mt-2 text-sm text-white/75">
+                      {formatCurrency(loyalty.valueToNextTier)} more in sales to unlock the{' '}
+                      <span className="font-semibold text-white">{tierLabel(next)}</span> badge
+                    </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div>
-                    <p className="text-4xl font-bold">{loyaltyData.points.toLocaleString()}</p>
-                    <p className="text-sm text-white/80">Total Points</p>
-                  </div>
-                  <div>
-                    <p className="text-4xl font-bold">{loyaltyData.multiplier}x</p>
-                    <p className="text-sm text-white/80">Points Multiplier</p>
-                  </div>
-                  <div>
-                    <p className="text-4xl font-bold">{loyaltyData.commissionRate}%</p>
-                    <p className="text-sm text-white/80">Commission Rate</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white/20 rounded-xl p-6 min-w-64">
-                <p className="text-sm mb-2">Progress to {loyaltyData.nextTier}</p>
-                <Progress value={progressToNextTier} className="h-3 bg-white/30" />
-                <p className="text-sm mt-2">{loyaltyData.pointsToNext.toLocaleString()} points to go</p>
+                ) : (
+                  <p className="mt-5 font-semibold text-yellow-300">Top rank reached — you're a legend!</p>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Tier Benefits */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-2"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-primary" />
-                Tier Benefits
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {tiers.map((tier, index) => (
-                  <div
-                    key={tier}
-                    className={`p-4 rounded-xl border-2 ${
-                      tier === loyaltyData.currentTier
-                        ? 'border-primary bg-primary/5'
-                        : index < currentTierIndex
-                        ? 'border-gray-200 bg-gray-50 dark:bg-gray-800/50'
-                        : 'border-gray-200 opacity-60'
-                    }`}
-                  >
-                    <Badge className={`${getTierBgClass(tier)} mb-3`}>{tier}</Badge>
-                    <p className="text-2xl font-bold mb-1">{tierBenefits[tier as keyof typeof tierBenefits].rate}%</p>
-                    <p className="text-sm text-muted-foreground mb-3">Commission Rate</p>
-                    <ul className="space-y-2">
-                      {tierBenefits[tier as keyof typeof tierBenefits].benefits.map((benefit, i) => (
-                        <li key={i} className="text-xs flex items-center gap-2">
-                          <CheckCircle className="w-3 h-3 text-green-500" />
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Milestones */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                Milestones
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {milestones.map((milestone) => (
-                  <div
-                    key={milestone.id}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
-                      milestone.completed
-                        ? 'bg-green-50 dark:bg-green-900/10'
-                        : 'bg-gray-50 dark:bg-gray-800/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {milestone.completed ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
-                      )}
-                      <span className={milestone.completed ? 'font-medium' : 'text-muted-foreground'}>
-                        {milestone.title}
-                      </span>
-                    </div>
-                    <Badge variant={milestone.completed ? 'success' : 'outline'}>
-                      +{milestone.points}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Points History */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-primary" />
-              Points History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pointsHistory.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+      {/* Rank ladder */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            Rank ladder
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {TIER_ORDER.map((t, i) => {
+              const unlocked = i <= tierIndex;
+              const current = i === tierIndex;
+              return (
+                <motion.div
+                  key={t}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className={`relative flex flex-col items-center rounded-xl border p-4 text-center ${
+                    current ? 'border-primary bg-primary/5 ring-2 ring-primary/30' : ''
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.description}</p>
-                      <p className="text-sm text-muted-foreground">{item.date}</p>
-                    </div>
+                  <div className={unlocked ? '' : 'opacity-30 grayscale'}>
+                    <TierBadge tier={t} size={64} />
                   </div>
-                  <Badge variant="success">+{item.points} pts</Badge>
-                </div>
+                  {!unlocked && <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />}
+                  {unlocked && !current && <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-green-500" />}
+                  <p className="mt-2 font-semibold">{tierLabel(t)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {TIER_THRESHOLDS[t] === 0 ? 'Starting rank' : `${formatCurrency(TIER_THRESHOLDS[t])}+ in sales`}
+                  </p>
+                  {current && <span className="mt-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white">You are here</span>}
+                </motion.div>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Your rank is based on the total value of your completed and in-progress sales. Commission is a flat{' '}
+            {loyalty.tierBenefits?.commissionRate ?? '12%'} at every rank.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Points history */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Points history</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-sm text-muted-foreground">
+            {loyalty.totalPoints.toLocaleString()} points earned from sales, referrals and achievements.
+          </p>
+          {loyalty.pointsHistory.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No points yet — close your first sale to start earning.</p>
+          ) : (
+            <ul className="divide-y">
+              {loyalty.pointsHistory.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{p.description}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <span className="shrink-0 font-semibold text-green-600">+{p.points.toLocaleString()}</span>
+                </li>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -50,6 +50,8 @@ import {
   Target,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TierAvatar } from '@/components/tier/tier-badge';
+import { useMyLoyalty } from '@/components/tier/use-my-tier';
 import { getImageUrl, api } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { getUser, clearAuth } from '@/lib/auth-storage';
@@ -385,6 +387,7 @@ export function Sidebar({
   };
 
   const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'User';
+  const myLoyalty = useMyLoyalty();
   const userInitials = currentUser
     ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`
     : 'U';
@@ -509,20 +512,22 @@ export function Sidebar({
             collapsed ? 'flex justify-center px-2' : 'px-4 flex items-center gap-3',
           )}
         >
-          <Avatar
-            className="w-10 h-10 shrink-0 ring-2"
-            style={{ '--tw-ring-color': role === 'super-admin' ? `${saColor}4d` : undefined } as React.CSSProperties}
-          >
-            {currentUser?.avatar && (
-              <AvatarImage src={getImageUrl(currentUser.avatar)} alt={userName} />
-            )}
-            <AvatarFallback
-              className="text-white text-sm font-semibold"
-              style={{ backgroundColor: role === 'super-admin' ? saColor : undefined }}
+          <TierAvatar tier={myLoyalty?.currentTier} badgeSize={20}>
+            <Avatar
+              className="w-10 h-10 shrink-0 ring-2"
+              style={{ '--tw-ring-color': role === 'super-admin' ? `${saColor}4d` : undefined } as React.CSSProperties}
             >
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+              {currentUser?.avatar && (
+                <AvatarImage src={getImageUrl(currentUser.avatar)} alt={userName} />
+              )}
+              <AvatarFallback
+                className="text-white text-sm font-semibold"
+                style={{ backgroundColor: role === 'super-admin' ? saColor : undefined }}
+              >
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+          </TierAvatar>
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p

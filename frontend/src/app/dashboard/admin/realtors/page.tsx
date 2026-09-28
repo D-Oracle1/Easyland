@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TierAvatar, TierBadge } from '@/components/tier/tier-badge';
 import {
   Dialog,
   DialogContent,
@@ -513,12 +514,14 @@ export default function RealtorsPage() {
                     <tr key={realtor.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <Avatar>
-                            {realtor.user.avatar && <AvatarImage src={realtor.user.avatar} alt={`${realtor.user.firstName} ${realtor.user.lastName}`} />}
-                            <AvatarFallback className="bg-primary text-white">
-                              {realtor.user.firstName[0]}{realtor.user.lastName[0]}
-                            </AvatarFallback>
-                          </Avatar>
+                          <TierAvatar tier={realtor.loyaltyTier}>
+                            <Avatar>
+                              {realtor.user.avatar && <AvatarImage src={realtor.user.avatar} alt={`${realtor.user.firstName} ${realtor.user.lastName}`} />}
+                              <AvatarFallback className="bg-primary text-white">
+                                {realtor.user.firstName[0]}{realtor.user.lastName[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                          </TierAvatar>
                           <span className="font-medium">{realtor.user.firstName} {realtor.user.lastName}</span>
                         </div>
                       </td>
@@ -533,7 +536,10 @@ export default function RealtorsPage() {
                         </div>
                       </td>
                       <td className="py-4">
-                        <Badge className={getTierBgClass(realtor.loyaltyTier)}>{realtor.loyaltyTier}</Badge>
+                        <span className="inline-flex items-center gap-1.5">
+                          <TierBadge tier={realtor.loyaltyTier} size={24} />
+                          <Badge className={getTierBgClass(realtor.loyaltyTier)}>{realtor.loyaltyTier}</Badge>
+                        </span>
                       </td>
                       <td className="py-4 font-medium">{realtor.totalSales}</td>
                       <td className="py-4">{formatCurrency(Number(realtor.totalSalesValue || 0))}</td>
@@ -904,12 +910,14 @@ export default function RealtorsPage() {
           {selectedRealtor && (
             <div className="space-y-6 py-4">
               <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  {selectedRealtor.user.avatar && <AvatarImage src={selectedRealtor.user.avatar} />}
-                  <AvatarFallback className="bg-primary text-white text-xl">
-                    {selectedRealtor.user.firstName[0]}{selectedRealtor.user.lastName[0]}
-                  </AvatarFallback>
-                </Avatar>
+                <TierAvatar tier={selectedRealtor.loyaltyTier} badgeSize={28}>
+                  <Avatar className="w-16 h-16">
+                    {selectedRealtor.user.avatar && <AvatarImage src={selectedRealtor.user.avatar} />}
+                    <AvatarFallback className="bg-primary text-white text-xl">
+                      {selectedRealtor.user.firstName[0]}{selectedRealtor.user.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                </TierAvatar>
                 <div>
                   <h3 className="text-lg font-semibold">{selectedRealtor.user.firstName} {selectedRealtor.user.lastName}</h3>
                   <Badge className={getTierBgClass(selectedRealtor.loyaltyTier)}>{selectedRealtor.loyaltyTier} Tier</Badge>

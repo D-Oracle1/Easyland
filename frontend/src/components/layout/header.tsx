@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TierAvatar } from '@/components/tier/tier-badge';
+import { useMyLoyalty } from '@/components/tier/use-my-tier';
 import { useNotifications } from '@/contexts/notification-context';
 import { CalloutButton } from '@/components/callout/callout-button';
 import { cn } from '@/lib/utils';
@@ -149,6 +151,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   }, [pathname]);
 
   const userName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'User';
+  const myLoyalty = useMyLoyalty();
   const userInitials = currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}` : 'U';
 
   // Auto-hide on scroll
@@ -365,14 +368,16 @@ export function Header({ onMenuClick }: HeaderProps) {
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <Avatar key={currentUser?.avatar || 'no-avatar'} className="w-8 h-8">
-              {currentUser?.avatar && (
-                <AvatarImage src={getImageUrl(currentUser.avatar)} alt={userName} />
-              )}
-              <AvatarFallback className="bg-primary text-white text-xs font-semibold">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
+            <TierAvatar tier={myLoyalty?.currentTier} badgeSize={16}>
+              <Avatar key={currentUser?.avatar || 'no-avatar'} className="w-8 h-8">
+                {currentUser?.avatar && (
+                  <AvatarImage src={getImageUrl(currentUser.avatar)} alt={userName} />
+                )}
+                <AvatarFallback className="bg-primary text-white text-xs font-semibold">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+            </TierAvatar>
             <ChevronDown
               className={cn(
                 'w-3.5 h-3.5 hidden md:block text-gray-400 transition-transform',

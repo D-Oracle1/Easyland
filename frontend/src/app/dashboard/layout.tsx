@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getToken, getUser } from '@/lib/auth-storage';
 import { Loader2 } from 'lucide-react';
 import { AuthenticatedProviders } from '../authenticated-providers';
+import { LevelUpCelebration } from '@/components/tier/level-up-celebration';
 
 export default function DashboardLayout({
   children,
@@ -57,5 +58,10 @@ export default function DashboardLayout({
     );
   }
 
-  return <AuthenticatedProviders>{children}</AuthenticatedProviders>;
+  return (
+    <AuthenticatedProviders>
+      {children}
+      <LevelUpCelebration />
+    </AuthenticatedProviders>
+  );
 }

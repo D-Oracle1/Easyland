@@ -28,6 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TierAvatar } from '@/components/tier/tier-badge';
 import {
   Dialog,
   DialogContent,
@@ -497,12 +498,14 @@ export default function RankingsPage() {
                       }`}
                     >
                       <div className="w-6 text-center text-sm font-bold text-muted-foreground">#{r.rank}</div>
-                      <Avatar className="w-8 h-8">
-                        {r.avatar && <AvatarImage src={getImageUrl(r.avatar)} alt={r.name} />}
-                        <AvatarFallback className="bg-primary text-white text-xs">
-                          {r.name.split(' ').map((n: string) => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
+                      <TierAvatar tier={r.tier}>
+                        <Avatar className="w-8 h-8">
+                          {r.avatar && <AvatarImage src={getImageUrl(r.avatar)} alt={r.name} />}
+                          <AvatarFallback className="bg-primary text-white text-xs">
+                            {r.name.split(' ').map((n: string) => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TierAvatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{r.name}</p>
                         <p className="text-xs text-muted-foreground">{r.totalSales} sales - {formatCurrency(r.totalValue)}</p>
@@ -645,12 +648,14 @@ export default function RankingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
-                  <Avatar className="w-16 h-16 border-4 border-white/30">
-                    {topRealtor.avatar && <AvatarImage src={getImageUrl(topRealtor.avatar)} alt={topRealtor.name} />}
-                    <AvatarFallback className="bg-white/20 text-white text-xl">
-                      {topRealtor.name.split(' ').map((n: string) => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
+                  <TierAvatar tier={topRealtor.tier} badgeSize={28}>
+                    <Avatar className="w-16 h-16 border-4 border-white/30">
+                      {topRealtor.avatar && <AvatarImage src={getImageUrl(topRealtor.avatar)} alt={topRealtor.name} />}
+                      <AvatarFallback className="bg-white/20 text-white text-xl">
+                        {topRealtor.name.split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TierAvatar>
                   <div>
                     <h3 className="text-xl font-bold">{topRealtor.name}</h3>
                     <Badge className="bg-white/20 text-white">{topRealtor.tier}</Badge>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { TierAvatar } from '@/components/tier/tier-badge';
 import { api } from '@/lib/api';
 import { formatCurrency, getTierBgClass } from '@/lib/utils';
 
@@ -116,10 +117,12 @@ export default function GORealtorsPage() {
                       <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
                         <td className="py-3">
                           <div className="flex items-center gap-3">
-                            <Avatar className="w-9 h-9">
-                              {user.avatar ? <img src={user.avatar} alt={name} className="w-full h-full object-cover rounded-full" /> : null}
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
-                            </Avatar>
+                            <TierAvatar tier={r.loyaltyTier ?? 'BRONZE'}>
+                              <Avatar className="w-9 h-9">
+                                {user.avatar ? <img src={user.avatar} alt={name} className="w-full h-full object-cover rounded-full" /> : null}
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+                              </Avatar>
+                            </TierAvatar>
                             <div>
                               <p className="font-medium text-sm">{name}</p>
                               <p className="text-xs text-muted-foreground flex items-center gap-1">
