@@ -22,8 +22,13 @@ const config: Config = {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        // Brand green = the homepage CTA green. DEFAULT follows --primary so
+        // dark mode can use a lighter tone for contrast.
+        brand: {
+          deep: '#0d2b1c', // CTA gradient end
+        },
         primary: {
-          DEFAULT: '#22c55e',
+          DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
           50: '#f0fdf4',
           100: '#dcfce7',
           200: '#bbf7d0',

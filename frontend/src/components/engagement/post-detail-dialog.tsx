@@ -400,7 +400,7 @@ export default function PostDetailDialog({ postId, open, onClose, preloadedPost 
                     {post.author.avatar && (
                       <AvatarImage src={getImageUrl(post.author.avatar)} alt={post.author.firstName} />
                     )}
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-400 text-white text-xs font-bold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary via-primary-800 to-brand-deep text-white text-xs font-bold">
                       {getInitials(post.author.firstName, post.author.lastName)}
                     </AvatarFallback>
                   </Avatar>
@@ -590,7 +590,7 @@ export default function PostDetailDialog({ postId, open, onClose, preloadedPost 
                     />
                     <Button
                       size="icon"
-                      className="h-10 w-10 shrink-0 self-end rounded-xl bg-gradient-to-br from-primary to-emerald-500"
+                      className="h-10 w-10 shrink-0 self-end rounded-xl bg-gradient-to-br from-primary via-primary-800 to-brand-deep"
                       disabled={!commentText.trim() || submitting}
                       onClick={handleComment}
                     >

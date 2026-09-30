@@ -10,7 +10,8 @@
     --card-foreground: 142 45% 9%;
     --popover: 0 0% 100%;
     --popover-foreground: 142 45% 9%;
-    --primary: 142 71% 45%;
+    /* CTA green #15803d (homepage CTA) */
+    --primary: 142 72% 29%;
     --primary-foreground: 0 0% 100%;
     --secondary: 142 30% 95%;
     --secondary-foreground: 142 72% 25%;
@@ -22,7 +23,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 142 20% 88%;
     --input: 142 20% 88%;
-    --ring: 142 71% 45%;
+    --ring: 142 72% 29%;
     --radius: 0.75rem;
   }
 
@@ -33,7 +34,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 142 24% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 142 64% 48%;
+    /* Lighter tone of the CTA green so primary text stays readable on dark */
+    --primary: 142 64% 40%;
     --primary-foreground: 0 0% 100%;
     --secondary: 142 18% 15%;
     --secondary-foreground: 0 0% 98%;
@@ -45,7 +47,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 142 18% 18%;
     --input: 142 18% 18%;
-    --ring: 142 64% 48%;
+    --ring: 142 64% 40%;
   }
 }
 

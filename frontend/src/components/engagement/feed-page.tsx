@@ -147,7 +147,7 @@ export default function EngagementFeedPage() {
   return (
     <div className="space-y-5">
       {/* Gradient header banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-600 to-teal-500 p-5 sm:p-6 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary-800 to-brand-deep p-5 sm:p-6 text-white shadow-lg">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 opacity-80" />
@@ -223,7 +223,7 @@ export default function EngagementFeedPage() {
                     disabled={loadingMore}
                     className={cn(
                       'relative overflow-hidden px-8 py-2.5 rounded-full text-sm font-semibold',
-                      'bg-gradient-to-r from-primary to-emerald-500 text-white shadow-md',
+                      'bg-gradient-to-r from-primary via-primary-800 to-brand-deep text-white shadow-md',
                       'hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200',
                       loadingMore && 'opacity-70 cursor-not-allowed scale-100'
                     )}

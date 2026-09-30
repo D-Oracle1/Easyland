@@ -475,7 +475,7 @@ export default function EngagementPage() {
 
         <Button
           onClick={openCreateDialog}
-          className="w-full sm:w-auto bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-md rounded-xl"
+          className="w-full sm:w-auto bg-gradient-to-r from-primary via-primary-800 to-brand-deep hover:from-primary/90 hover:to-brand-deep/90 shadow-md rounded-xl"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Post
@@ -490,14 +490,14 @@ export default function EngagementPage() {
         </div>
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/10 to-emerald-500/10 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary-800/10 flex items-center justify-center">
             <FileText className="w-8 h-8 text-primary/50" />
           </div>
           <div className="text-center">
             <p className="font-semibold text-gray-700 dark:text-gray-300">No posts yet</p>
             <p className="text-sm text-muted-foreground mt-1">Create your first engagement post</p>
           </div>
-          <Button onClick={openCreateDialog} className="rounded-xl bg-gradient-to-r from-primary to-emerald-500">
+          <Button onClick={openCreateDialog} className="rounded-xl bg-gradient-to-r from-primary via-primary-800 to-brand-deep">
             <Plus className="w-4 h-4 mr-2" /> Create Post
           </Button>
         </div>
@@ -619,7 +619,7 @@ export default function EngagementPage() {
     if (!analytics) {
       return (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/10 to-emerald-500/10 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/10 to-primary-800/10 flex items-center justify-center">
             <BarChart3 className="w-8 h-8 text-primary/50" />
           </div>
           <p className="text-muted-foreground">No analytics data yet</p>
@@ -662,7 +662,7 @@ export default function EngagementPage() {
         <Card className="rounded-2xl border-gray-100 dark:border-gray-800 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary via-primary-800 to-brand-deep flex items-center justify-center">
                 <BarChart3 className="w-4 h-4 text-white" />
               </div>
               Posts by Type
@@ -867,7 +867,7 @@ export default function EngagementPage() {
           <Button
             onClick={handlePublish}
             disabled={submitting}
-            className="rounded-xl bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90"
+            className="rounded-xl bg-gradient-to-r from-primary via-primary-800 to-brand-deep hover:from-primary/90 hover:to-brand-deep/90"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Publish
@@ -890,7 +890,7 @@ export default function EngagementPage() {
     />
     <div className="space-y-6">
       {/* Page header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-emerald-600 to-teal-500 p-5 sm:p-6 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary-800 to-brand-deep p-5 sm:p-6 text-white shadow-lg">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 opacity-80" />
@@ -910,7 +910,7 @@ export default function EngagementPage() {
           className={cn(
             'flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
             activeTab === 'posts'
-              ? 'bg-gradient-to-r from-primary to-emerald-500 text-white shadow-md'
+              ? 'bg-gradient-to-r from-primary via-primary-800 to-brand-deep text-white shadow-md'
               : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-primary/40 hover:text-primary'
           )}
         >
@@ -922,7 +922,7 @@ export default function EngagementPage() {
           className={cn(
             'flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
             activeTab === 'analytics'
-              ? 'bg-gradient-to-r from-primary to-emerald-500 text-white shadow-md'
+              ? 'bg-gradient-to-r from-primary via-primary-800 to-brand-deep text-white shadow-md'
               : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-primary/40 hover:text-primary'
           )}
         >

@@ -245,7 +245,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             href={actionConfig.href}
             className={cn(
               'hidden sm:flex items-center gap-1.5 h-8 px-3.5 rounded-full text-xs font-semibold text-white',
-              'bg-gradient-to-r from-primary to-emerald-500',
+              'bg-gradient-to-r from-primary via-primary-800 to-brand-deep',
               'hover:opacity-90 transition-opacity shadow-sm',
             )}
           >
