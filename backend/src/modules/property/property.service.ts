@@ -286,7 +286,16 @@ export class PropertyService {
         },
       ];
     }
-    if (query.type) where.type = query.type;
+    // `type` may be a single type or a comma-separated list (e.g. the homepage's
+    // "Apartments & Homes" = RESIDENTIAL,APARTMENT,CONDO,TOWNHOUSE,VILLA)
+    if (query.type) {
+      const types = String(query.type)
+        .split(',')
+        .map((t) => t.trim().toUpperCase())
+        .filter((t) => (Object.values(PropertyType) as string[]).includes(t)) as PropertyType[];
+      if (types.length === 1) where.type = types[0];
+      else if (types.length > 1) where.type = { in: types };
+    }
     if (query.city) where.city = { contains: query.city, mode: 'insensitive' };
     if (query.minPrice !== undefined && !isNaN(Number(query.minPrice)))
       where.price = { ...where.price, gte: Number(query.minPrice) };
