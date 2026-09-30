@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useBranding } from '@/hooks/use-branding';
+import { BrandLogo } from '@/components/brand-logo';
 
 export default function BalanceSheetPage() {
   const branding = useBranding();
@@ -180,7 +181,7 @@ export default function BalanceSheetPage() {
               {/* Branded Header */}
               <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
                 {branding.logo && (
-                  <img src={branding.logo} alt={branding.companyName} className="h-12 mx-auto mb-3 object-contain" />
+                  <BrandLogo src={branding.logo} alt={branding.companyName} on="light" className="h-12 mx-auto mb-3" />
                 )}
                 <h1 className="text-2xl font-bold text-gray-900">{branding.companyName ?? 'Company'}</h1>
                 <h2 className="text-lg font-semibold text-gray-600 mt-1">Balance Sheet</h2>

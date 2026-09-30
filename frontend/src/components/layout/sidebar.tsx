@@ -58,6 +58,7 @@ import { getUser, clearAuth } from '@/lib/auth-storage';
 import { isSocOwner } from '@/lib/security/owner';
 import { useBranding, getShortName } from '@/hooks/use-branding';
 import { usePlatformBranding, getPlatformName } from '@/hooks/use-platform-branding';
+import { BrandLogo } from '@/components/brand-logo';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -185,12 +186,8 @@ const groupedNavigationConfig: Record<string, NavSection[]> = {
         { name: 'Departments', href: '/dashboard/admin/departments', icon: Building, moduleKey: 'departments' },
       ],
     },
-    {
-      label: 'Operations',
-      items: [
-        { name: 'Branches', href: '/dashboard/admin/branches', icon: Building },
-      ],
-    },
+    // "Operations → Branches" is hidden until the branch system backend
+    // (branch-unreleased) and its DB migration are shipped.
     {
       label: 'Sales & Finance',
       items: [
@@ -447,27 +444,24 @@ export function Sidebar({
                 </div>
               )
             ) : branding.logo ? (
-              <img
-                src={getImageUrl(branding.logo)}
-                alt={branding.companyName || 'Logo'}
-                className="w-9 h-9 rounded-xl object-contain shrink-0 bg-white p-1"
-              />
+              <BrandLogo src={getImageUrl(branding.logo)} alt={branding.companyName || 'Logo'} on="dark" className="w-9 h-9 shrink-0" />
             ) : (
               <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
             )}
             {!collapsed && (
-              <div>
+              <div className="min-w-0">
                 <span
                   className={cn(
-                    'text-base font-bold truncate block',
+                    'text-base font-bold truncate block max-w-[150px]',
                     role === 'super-admin' ? 'text-gray-900' : 'text-white',
                   )}
+                  title={branding.companyName || undefined}
                 >
                   {role === 'super-admin'
                     ? getPlatformName(platformBranding)
-                    : getShortName(branding)}
+                    : branding.companyName || getShortName(branding)}
                 </span>
                 {role === 'super-admin' && (
                   <span className="text-[10px] font-medium tracking-wide uppercase" style={{ color: saColor }}>

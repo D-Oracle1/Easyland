@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { getImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
+import { BrandLogo } from '@/components/brand-logo';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -72,7 +73,7 @@ export function PublicFooter({ cmsData }: { cmsData?: FooterData }) {
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-5">
               {logoUrl ? (
-                <img src={logoUrl} alt={companyName} className="w-10 h-10 rounded-xl object-contain" />
+                <BrandLogo src={logoUrl} alt={companyName} on="dark" className="w-10 h-10" />
               ) : (
                 <div className="w-10 h-10 rounded-xl bg-green-700 flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-white" />

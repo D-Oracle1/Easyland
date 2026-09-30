@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useBranding } from '@/hooks/use-branding';
+import { BrandLogo } from '@/components/brand-logo';
 
 type Period = 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'custom';
 
@@ -315,7 +316,7 @@ export default function ProfitLossPage() {
               {/* Branded Header */}
               <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
                 {branding.logo && (
-                  <img src={branding.logo} alt={branding.companyName} className="h-12 mx-auto mb-3 object-contain" />
+                  <BrandLogo src={branding.logo} alt={branding.companyName} on="light" className="h-12 mx-auto mb-3" />
                 )}
                 <h1 className="text-2xl font-bold text-gray-900">{branding.companyName ?? 'Company'}</h1>
                 <h2 className="text-lg font-semibold text-gray-600 mt-1">Profit & Loss Statement</h2>

@@ -7,8 +7,8 @@ import { getImageUrl } from '@/lib/api';
 /**
  * Branded launch splash for the installed PWA.
  *
- * Shows the company logo (the dark-green lemon-leaf brand mark) on the brand
- * background when the app is opened in standalone (installed) mode, then fades
+ * Shows the company logo (light letterform + leaf) on the deep brand-green
+ * background — matching the manifest background_color and app icon — when the app is opened in standalone (installed) mode, then fades
  * out once the page has loaded AND the logo is available. On the very first
  * launch the branding cache may be empty, so we explicitly fetch it and hold
  * the splash (up to a hard cap) until the real logo can paint — that way the
@@ -27,7 +27,6 @@ export function PWASplashScreen() {
       ? branding.logo
       : getImageUrl(branding.logo)
     : null;
-  const accent = branding.primaryColor || '#0b5c46';
 
   // Decide whether to show the splash (installed PWA, once per app session).
   useEffect(() => {
@@ -92,7 +91,7 @@ export function PWASplashScreen() {
   return (
     <div
       aria-hidden
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-gray-950 transition-opacity ease-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#15803d] via-[#166534] to-[#0d2b1c] transition-opacity ease-out ${
         leaving ? 'opacity-0' : 'opacity-100'
       }`}
       style={{ transitionDuration: '400ms' }}
@@ -119,20 +118,20 @@ export function PWASplashScreen() {
           <img
             src={logo}
             alt=""
-            className="pwa-splash-logo h-28 w-28 object-contain"
+            className="pwa-splash-logo h-28 w-28 object-contain drop-shadow-xl"
             style={{ animation: 'pwaSplashPop .6s ease-out both' }}
           />
         ) : (
           <div
             className="pwa-splash-logo h-28 w-28 rounded-3xl"
-            style={{ background: accent, animation: 'pwaSplashPop .6s ease-out both' }}
+            style={{ background: 'rgba(255,255,255,0.15)', animation: 'pwaSplashPop .6s ease-out both' }}
           />
         )}
 
-        <div className="h-1 w-24 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+        <div className="h-1 w-24 overflow-hidden rounded-full bg-white/15">
           <div
             className="pwa-splash-bar h-full w-1/3 rounded-full"
-            style={{ background: accent, animation: 'pwaSplashBar 1.1s ease-in-out infinite' }}
+            style={{ background: '#ffffff', animation: 'pwaSplashBar 1.1s ease-in-out infinite' }}
           />
         </div>
       </div>

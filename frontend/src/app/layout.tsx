@@ -39,15 +39,14 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
   icons: {
-    // Dynamic favicon resolves to the current tenant's company logo (by host),
-    // with the static favicon as a fallback.
+    // Generated per tenant: company logo on the brand-green tile (see /api/app-icon)
     icon: [
-      { url: '/api/favicon', type: 'image/png' },
+      { url: '/api/app-icon?size=64&rounded=1', type: 'image/png' },
       { url: '/favicon.ico' },
     ],
-    shortcut: [{ url: '/api/favicon' }],
+    shortcut: [{ url: '/api/app-icon?size=64&rounded=1' }],
     apple: [
-      { url: '/api/favicon' },
+      { url: '/api/app-icon?size=180', sizes: '180x180', type: 'image/png' },
       { url: '/apple-touch-icon.png' },
     ],
   },
@@ -58,8 +57,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#22c55e' },
-    { media: '(prefers-color-scheme: dark)', color: '#052e16' },
+    { media: '(prefers-color-scheme: light)', color: '#15803d' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d2b1c' },
   ],
   width: 'device-width',
   initialScale: 1,

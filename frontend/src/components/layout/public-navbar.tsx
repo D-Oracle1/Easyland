@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/lib/api';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
+import { BrandLogo } from '@/components/brand-logo';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
@@ -56,14 +57,14 @@ export function PublicNavbar({ currentPage }: PublicNavbarProps) {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
             {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={companyName}
-                className={cn(
-                  'w-8 h-8 rounded-lg object-contain transition-all duration-300',
-                  scrolled ? 'brightness-0 dark:brightness-0 dark:invert' : '',
-                )}
-              />
+              scrolled ? (
+                <>
+                  <BrandLogo src={logoUrl} alt={companyName} on="light" className="w-8 h-8 dark:hidden" />
+                  <BrandLogo src={logoUrl} alt={companyName} on="dark" className="hidden w-8 h-8 dark:block" />
+                </>
+              ) : (
+                <BrandLogo src={logoUrl} alt={companyName} on="dark" className="w-8 h-8" />
+              )
             ) : (
               <div className={cn(
                 'w-8 h-8 rounded-lg flex items-center justify-center transition-colors',

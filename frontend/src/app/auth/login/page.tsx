@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { setAuth, clearAuth, getToken, getUser } from '@/lib/auth-storage';
 import { getImageUrl, setTenantId, apiUrl } from '@/lib/api';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
+import { BrandLogo } from '@/components/brand-logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -190,11 +191,10 @@ export default function LoginPage() {
       <Card className="w-full max-w-md relative z-10">
         <CardHeader className="text-center">
           {branding.logo ? (
-            <img
-              src={branding.logo.startsWith('http') ? branding.logo : getImageUrl(branding.logo)}
-              alt={companyName}
-              className="mx-auto h-12 w-auto object-contain mb-4"
-            />
+            <>
+              <BrandLogo src={branding.logo.startsWith('http') ? branding.logo : getImageUrl(branding.logo)} alt={companyName} on="light" className="mx-auto h-12 w-auto mb-4 dark:hidden" />
+              <BrandLogo src={branding.logo.startsWith('http') ? branding.logo : getImageUrl(branding.logo)} alt={companyName} on="dark" className="mx-auto h-12 w-auto mb-4 hidden dark:block" />
+            </>
           ) : (
             <div className="mx-auto w-12 h-12 rounded-lg bg-primary flex items-center justify-center mb-4">
               <Building2 className="w-6 h-6 text-white" />

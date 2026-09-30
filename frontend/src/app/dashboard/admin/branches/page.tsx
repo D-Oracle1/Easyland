@@ -50,10 +50,21 @@ export default function AdminBranchesPage() {
   const [target, setTarget]         = useState<any>(null);
   const [form, setForm]             = useState({ ...emptyForm });
   const [submitting, setSubmitting] = useState(false);
+  const [notEnabled, setNotEnabled] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
+      // The branch system is not live on the backend yet; show a notice
+      // instead of failing requests.
+      try {
+        await api.get('/branches');
+      } catch (e: any) {
+        if (/cannot get|not found|404/i.test(String(e?.message))) {
+          setNotEnabled(true);
+          return;
+        }
+      }
       const now   = new Date();
       const start = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
       const end   = now.toISOString().slice(0, 10);
@@ -158,6 +169,23 @@ export default function AdminBranchesPage() {
     Expenses:  b.expenses,
     NetProfit: b.netProfit,
   })) ?? [];
+
+  if (notEnabled) {
+    return (
+      <Card className="mx-auto mt-6 max-w-lg text-center">
+        <CardContent className="space-y-3 p-8">
+          <h1 className="text-xl font-bold">Branch management isn&apos;t enabled yet</h1>
+          <p className="text-sm text-muted-foreground">
+            Multi-branch operations (branch stats, comparisons and property transfers) will appear here once the
+            branch system is switched on for your company.
+          </p>
+          <Button asChild variant="outline">
+            <Link href="/dashboard/admin">Back to dashboard</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 space-y-5">

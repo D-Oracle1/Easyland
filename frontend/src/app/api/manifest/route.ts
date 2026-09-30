@@ -17,8 +17,10 @@ export async function GET(req: NextRequest) {
   let companyName = 'Easyland';
   let shortName = 'Easyland';
   let description = 'Enterprise-grade PropTech platform for managing realtors, properties, and clients';
-  let themeColor = '#22c55e';
-  let bgColor = '#ffffff';
+  // Brand CTA green; splash background matches the app-icon tile so the
+  // OS launch screen blends into the in-app splash.
+  let themeColor = '#15803d';
+  const bgColor = '#0d2b1c';
   let icons = DEFAULT_ICONS;
   let splashAnimation = 'none';
 
@@ -36,29 +38,23 @@ export async function GET(req: NextRequest) {
         const company = raw?.data || raw;
         if (company?.name) companyName = company.name;
         if (company?.primaryColor) themeColor = company.primaryColor;
+        // (pwaSettings.themeColor / bgColor are superseded by the brand colours)
 
         const pwa = company?.pwaSettings;
         if (pwa) {
           if (pwa.appName) companyName = pwa.appName;
           if (pwa.shortName) shortName = pwa.shortName;
           if (pwa.description) description = pwa.description;
-          if (pwa.themeColor) themeColor = pwa.themeColor;
-          if (pwa.bgColor) bgColor = pwa.bgColor;
           if (pwa.splashAnimation) splashAnimation = pwa.splashAnimation;
         }
 
-        // Put the tenant's logo first so the install icon and the launch splash
-        // (Android derives it from name + background_color + the first icon) use
-        // the company branding. Tenant logos are marked `any` — not `maskable` —
-        // because a bare logo has no safe-zone padding and would be cropped by
-        // Android's adaptive-icon mask. The default 512 keeps the maskable slot.
-        const brandLogo = pwa?.splashLogo || company?.logo;
-        if (brandLogo) {
-          icons = [
-            { src: brandLogo, sizes: '512x512', type: 'image/png', purpose: 'any' },
-            ...DEFAULT_ICONS,
-          ];
-        }
+        // Generated icons: logo on the brand tile (always has contrast), plus
+        // a padded maskable version for Android's adaptive icon shapes.
+        icons = [
+          { src: '/api/app-icon?size=192&rounded=1', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/api/app-icon?size=512&rounded=1', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/api/app-icon?size=512&maskable=1', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ];
       }
     } catch {
       // Fall back to defaults
