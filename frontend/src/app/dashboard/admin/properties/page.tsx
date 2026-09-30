@@ -38,6 +38,8 @@ import { api, getImageUrl } from '@/lib/api';
 import { getToken } from '@/lib/auth-storage';
 import { AreaUnitSelect } from '@/components/area-unit-select';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 const propertyTypes = [
   { value: 'LAND', label: 'Land', icon: LandPlot },
@@ -714,25 +716,21 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="Properties" description="Land and apartment listings, availability and value" icon={Building2} />
+
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat, index) => (
-          <motion.div
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((stat: any, index: number) => (
+          <StatTile
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-4`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-                <h3 className="text-2xl font-bold">{stat.value}</h3>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.title}
+            value={stat.value}
+            hint={stat.change || undefined}
+            icon={stat.icon || Building2}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 
@@ -744,7 +742,7 @@ export default function PropertiesPage() {
       >
         <Card>
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex shrink-0 items-center gap-2 whitespace-nowrap">
               <Home className="w-5 h-5 text-primary" />
               All Properties
             </CardTitle>

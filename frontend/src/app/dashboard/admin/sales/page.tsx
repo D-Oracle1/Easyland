@@ -50,6 +50,8 @@ import { api } from '@/lib/api';
 import { ReceiptModal, ReceiptData } from '@/components/receipt';
 import { toast } from 'sonner';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 type TimePeriod = 'month' | 'quarter' | 'year' | 'all';
 
@@ -576,10 +578,7 @@ export default function SalesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap gap-4 justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Sales Management</h1>
-          <p className="text-sm text-muted-foreground">View, approve and report sales</p>
-        </div>
+        <PageHeader title="Sales" description="View, approve and report sales" icon={NairaSign} />
         <div className="flex flex-wrap gap-2 items-center">
           <Button className="bg-primary hover:bg-primary/90 gap-2" onClick={openReportSaleDialog}>
             <Plus className="w-4 h-4" />
@@ -600,32 +599,18 @@ export default function SalesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        {stats.map((stat, index) => (
-          <motion.div
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                  </div>
-                  {stat.change && (
-                    <div className={`flex items-center gap-1 text-sm ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                      {stat.trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                      {stat.change}
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-2xl font-bold">{stat.value}</h3>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.title}
+            value={stat.value}
+            hint={stat.change || undefined}
+            icon={stat.icon || NairaSign}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 
@@ -673,7 +658,7 @@ export default function SalesPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <p className="text-lg font-bold text-[#22c55e]">{formatCurrency(sale.amount)}</p>
+                      <p className="text-lg font-bold text-[#15803d]">{formatCurrency(sale.amount)}</p>
                       <div className="flex flex-wrap gap-1">
                         <Button
                           size="sm"
@@ -721,7 +706,7 @@ export default function SalesPage() {
       >
         <Card>
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex shrink-0 items-center gap-2 whitespace-nowrap">
               <NairaSign className="w-5 h-5 text-primary" />
               All Reported Sales - {getPeriodLabel()}
             </CardTitle>
@@ -1003,8 +988,8 @@ export default function SalesPage() {
                 </div>
 
                 {/* Sale Details */}
-                <div className="p-4 bg-[#22c55e]/5 rounded-lg border border-[#22c55e]/20">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-[#22c55e]">
+                <div className="p-4 bg-[#15803d]/5 rounded-lg border border-[#15803d]/20">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-[#15803d]">
                     <NairaSign className="w-4 h-4" />
                     Sale Breakdown
                   </h4>
@@ -1027,7 +1012,7 @@ export default function SalesPage() {
                     )}
                     <div>
                       <p className="text-xs text-muted-foreground">Total Amount</p>
-                      <p className="text-xl font-bold text-[#22c55e]">{formatCurrency(selectedSale.amount)}</p>
+                      <p className="text-xl font-bold text-[#15803d]">{formatCurrency(selectedSale.amount)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Commission</p>

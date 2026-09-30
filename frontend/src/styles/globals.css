@@ -344,3 +344,58 @@
 @media (prefers-reduced-motion: reduce) {
   .bubble { animation: none; opacity: 0; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Dashboard content (Phase 2 redesign). Scoped to `.dash-content` (the main
+   area of every tenant dashboard) so hand-written tables and native selects
+   across all pages share one look without editing each page.
+   ───────────────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Header row: tinted band, small-caps labels */
+  .dash-content table thead tr {
+    background-color: hsl(var(--primary) / 0.05);
+    border-bottom-color: hsl(var(--primary) / 0.12);
+  }
+  .dash-content table thead th {
+    padding: 0.7rem 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    white-space: nowrap;
+  }
+  .dash-content table thead th:first-child { border-top-left-radius: 0.75rem; border-bottom-left-radius: 0.75rem; }
+  .dash-content table thead th:last-child { border-top-right-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
+  .dash-content table thead tr { border-bottom-width: 0; }
+
+  /* Body rows: roomy, soft dividers, brand hover */
+  .dash-content table tbody td { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .dash-content table tbody tr {
+    border-bottom: 1px solid hsl(var(--border) / 0.7);
+    transition: background-color 0.15s ease;
+  }
+  .dash-content table tbody tr:last-child { border-bottom-width: 0; }
+  .dash-content table tbody tr:hover { background-color: hsl(var(--primary) / 0.04); }
+
+  /* Native selects used as filters */
+  .dash-content select:not([multiple]) {
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--card));
+    padding-left: 0.75rem;
+    padding-right: 2rem;
+    font-size: 0.875rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .dash-content select:not([multiple]):focus {
+    outline: none;
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+  }
+}

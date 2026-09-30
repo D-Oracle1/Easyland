@@ -36,6 +36,8 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 type TimePeriod = 'month' | 'quarter' | 'year' | 'all';
 
@@ -73,7 +75,7 @@ export default function CommissionPage() {
       // rates is like { BRONZE: 0.03, SILVER: 0.035, GOLD: 0.04, PLATINUM: 0.05 }
       const updated = TIER_META.map(meta => ({
         ...meta,
-        rate: rates[meta.tier] !== undefined ? Number(rates[meta.tier]) * 100 : 0,
+        rate: rates[meta.tier] !== undefined ? Math.round(Number(rates[meta.tier]) * 10000) / 100 : 0, // avoid 7.000000000000001%
       }));
       setTierRates(updated);
       setEditingRates(updated);
@@ -289,7 +291,7 @@ export default function CommissionPage() {
     <div className="space-y-6">
       {/* Time Period Filter */}
       <div className="flex flex-wrap gap-2 justify-between items-center">
-        <h1 className="text-2xl font-bold">Commission Management</h1>
+        <PageHeader title="Commission" description="Realtor earnings, payouts and the commission rate" icon={Calculator} />
         <div className="flex flex-wrap gap-2">
           <Button
             variant={timePeriod === 'month' ? 'default' : 'outline'}
@@ -324,24 +326,18 @@ export default function CommissionPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
-          <motion.div
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-4`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-                <h3 className="text-2xl font-bold">{stat.value}</h3>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.title}
+            value={stat.value}
+            hint={stat.change || undefined}
+            icon={stat.icon || Calculator}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 
@@ -354,7 +350,7 @@ export default function CommissionPage() {
         >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                 <Calculator className="w-5 h-5 text-primary" />
                 Commission Rates
               </CardTitle>
@@ -384,7 +380,7 @@ export default function CommissionPage() {
         >
           <Card>
             <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex shrink-0 items-center gap-2 whitespace-nowrap">
                 <NairaSign className="w-5 h-5 text-primary" />
                 Commission Payments - {getPeriodLabel()}
               </CardTitle>

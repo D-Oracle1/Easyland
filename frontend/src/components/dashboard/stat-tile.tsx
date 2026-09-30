@@ -67,3 +67,13 @@ export function StatTile({
     </motion.div>
   );
 }
+
+/** Map legacy per-page colour classes (e.g. "text-orange-600") to a StatTile tone. */
+export function toneFromClass(color?: string): StatTone {
+  const c = color || '';
+  if (/orange|amber|yellow/.test(c)) return 'amber';
+  if (/blue|sky|cyan/.test(c)) return 'sky';
+  if (/red|rose|pink/.test(c)) return 'rose';
+  if (/purple|violet|slate|gray/.test(c)) return 'slate';
+  return 'brand';
+}

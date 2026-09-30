@@ -73,7 +73,7 @@ export default function RealtorCommissionPage() {
         if (rates && typeof rates === 'object') {
           const converted: Record<string, number> = {};
           for (const [tier, rate] of Object.entries(rates)) {
-            converted[tier] = Number(rate) * 100;
+            converted[tier] = Math.round(Number(rate) * 10000) / 100;
           }
           setCommissionRates(converted);
         }

@@ -82,7 +82,8 @@ export function DashboardShell({ role, children, extras }: DashboardShellProps) 
       >
         <Header onMenuClick={() => setMobileOpen(!mobileOpen)} />
         {extras}
-        <main className="p-3 md:p-6">{children}</main>
+        {/* `dash-content` scopes the shared table / select styling (globals.css) */}
+        <main className={cn('p-3 md:p-6', !isSuperAdmin && 'dash-content')}>{children}</main>
       </div>
     </div>
   );

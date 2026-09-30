@@ -49,6 +49,8 @@ import { formatCurrency, getTierBgClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { getToken } from '@/lib/auth-storage';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 interface RealtorData {
   id: string;
@@ -407,26 +409,21 @@ export default function RealtorsPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader title="Realtors" description="Your sales team — ranks, performance and commission" icon={Users} />
+
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
-          <motion.div
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-4`}>
-                  <Users className={`w-6 h-6 ${stat.color}`} />
-                </div>
-                <h3 className="text-2xl font-bold">{stat.value}</h3>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-                <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.title}
+            value={stat.value}
+            hint={stat.change || undefined}
+            icon={stat.icon || Users}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 
@@ -438,7 +435,7 @@ export default function RealtorsPage() {
       >
         <Card>
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex shrink-0 items-center gap-2 whitespace-nowrap">
               <Users className="w-5 h-5 text-primary" />
               All Realtors
             </CardTitle>
