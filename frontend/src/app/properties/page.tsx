@@ -21,12 +21,16 @@ import {
 } from 'lucide-react';
 import { api, getImageUrl } from '@/lib/api';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
+import { CATEGORY_TYPES } from '@/lib/property-categories';
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 
 const PROPERTY_TYPES = [
   { value: '', label: 'All Types' },
+  // Whole categories, as linked from the homepage sections
+  { value: CATEGORY_TYPES.homes.join(','), label: 'Apartments & Homes' },
+  { value: CATEGORY_TYPES.commercial.join(','), label: 'All Commercial' },
   { value: 'RESIDENTIAL', label: 'Residential' },
   { value: 'COMMERCIAL', label: 'Commercial' },
   { value: 'LAND', label: 'Land' },

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import {
   Building2,
   Users,
@@ -16,9 +15,6 @@ import {
   Zap,
   Search,
   Home,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
   Star,
   ArrowRight,
   CheckCircle2,
@@ -27,16 +23,21 @@ import {
   MapPin,
   Clock,
   LandPlot,
-  Loader2,
   Calendar,
   Globe,
-  Leaf,
 } from 'lucide-react';
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { LandCard, HomeCard } from '@/components/home/listing-cards';
 import { api, getImageUrl } from '@/lib/api';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
+import {
+  CATEGORY_LABELS,
+  CATEGORY_TYPES,
+  categoryHref,
+  type PropertyCategory,
+} from '@/lib/property-categories';
 
 interface HomepageEvent {
   id: string;
@@ -51,24 +52,29 @@ interface HomepageEvent {
   _count: { registrations: number };
 }
 
+type CategoryListings = Record<PropertyCategory, { items: any[]; total: number }>;
+
+const EMPTY_LISTINGS: CategoryListings = {
+  land: { items: [], total: 0 },
+  homes: { items: [], total: 0 },
+  commercial: { items: [], total: 0 },
+};
+
 const PLACEHOLDER_HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1400&q=80',
 ];
 
 const ICON_MAP: Record<string, any> = {
   Users, Building2, TrendingUp, Award, BarChart3, MessageSquare, Shield, Zap, Star, Search,
 };
 
-function getTypeIcon(type: string) {
-  switch (type) {
-    case 'LAND': return LandPlot;
-    case 'COMMERCIAL': case 'INDUSTRIAL': return Building2;
-    default: return Home;
-  }
-}
+const SEARCH_TABS: { value: '' | PropertyCategory; label: string }[] = [
+  { value: '', label: 'All' },
+  { value: 'land', label: 'Land' },
+  { value: 'homes', label: 'Apartments' },
+];
 
 // ── Lightweight sessionStorage cache (stale-while-revalidate) ──────────────
 function scRead<T>(key: string, ttlMs: number): T | null {
@@ -84,35 +90,56 @@ function scWrite(key: string, data: unknown) {
   try { sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), d: data })); } catch {}
 }
 
-const PROPERTY_TYPES = [
-  { value: '', label: 'All Types' },
-  { value: 'RESIDENTIAL', label: 'Residential' },
-  { value: 'APARTMENT', label: 'Apartment' },
-  { value: 'COMMERCIAL', label: 'Commercial' },
-  { value: 'LAND', label: 'Land' },
-  { value: 'VILLA', label: 'Villa' },
-];
+const abs = (src: string) => (src.startsWith('http') ? src : getImageUrl(src));
+
+function SectionHeading({ eyebrow, title, subtitle, accent = 'text-green-700', action }: {
+  eyebrow: string; title: string; subtitle?: string; accent?: string; action?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="max-w-2xl">
+        <span className={`text-xs font-bold uppercase tracking-[0.2em] ${accent}`}>{eyebrow}</span>
+        <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">{title}</h2>
+        {subtitle && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function CardSkeletons() {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-gray-900">
+          <div className="aspect-[4/3] animate-pulse bg-gray-200 dark:bg-gray-800" />
+          <div className="space-y-2 p-5">
+            <div className="h-4 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function HomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState('');
-  const [typeOpen, setTypeOpen] = useState(false);
-  const cachedProps = scRead<{ items: any[]; totalPages: number; totalCount: number }>('__hp_props__', 30_000);
-  const cachedCms   = scRead<Record<string, any>>('__hp_cms__', 300_000);
-  const cachedEvts  = scRead<any>('__hp_evts__', 120_000);
+  const [searchCategory, setSearchCategory] = useState<'' | PropertyCategory>('');
 
-  const [properties, setProperties] = useState<any[]>(cachedProps?.items || []);
-  const [loading, setLoading] = useState(!cachedProps);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(cachedProps?.totalPages || 1);
-  const [totalCount, setTotalCount] = useState(cachedProps?.totalCount || 0);
+  const cachedListings = scRead<CategoryListings>('__hp_cats__', 30_000);
+  const cachedCms = scRead<Record<string, any>>('__hp_cms__', 300_000);
+  const cachedEvts = scRead<any>('__hp_evts__', 120_000);
+
+  const [listings, setListings] = useState<CategoryListings>(cachedListings || EMPTY_LISTINGS);
+  const [loading, setLoading] = useState(!cachedListings);
   const [cms, setCms] = useState<Record<string, any> | null>(cachedCms);
   const [events, setEvents] = useState<{ featured: HomepageEvent[]; upcoming: HomepageEvent[]; closingSoon: HomepageEvent[] } | null>(cachedEvts);
   // Resolve tenant company ID from hostname (no-op if NEXT_PUBLIC_COMPANY_ID is set)
   const { tenantReady } = useTenantResolution();
 
-  // Step 2: fetch CMS + events in parallel once tenant ID is known
+  // CMS + events once the tenant is known
   useEffect(() => {
     if (!tenantReady) return;
     api.get('/cms/public')
@@ -129,6 +156,31 @@ export default function HomePage() {
       .catch(() => {});
   }, [tenantReady]);
 
+  // Listings, split by the property type the admin chose when listing
+  const fetchListings = useCallback(async () => {
+    const fetchCategory = async (category: PropertyCategory) => {
+      try {
+        const raw = await api.get(`/properties/listed?limit=6&type=${CATEGORY_TYPES[category].join(',')}`);
+        const items = Array.isArray(raw) ? raw : (raw?.data || []);
+        return { items, total: raw?.meta?.total ?? items.length };
+      } catch {
+        return { items: [], total: 0 };
+      }
+    };
+    const [land, homes, commercial] = await Promise.all([
+      fetchCategory('land'), fetchCategory('homes'), fetchCategory('commercial'),
+    ]);
+    const next = { land, homes, commercial };
+    setListings(next);
+    scWrite('__hp_cats__', next);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!tenantReady) return;
+    fetchListings();
+  }, [tenantReady, fetchListings]);
+
   const companyName = cms?.branding?.companyName || 'Real Estate Management';
   const hero = cms?.hero || {};
   const agents = cms?.agents || {};
@@ -139,105 +191,31 @@ export default function HomePage() {
   const cta = cms?.cta || {};
   const contact = cms?.contact || {};
 
-  // Fallback hero content when CMS hero is not populated
-  const heroTitle = hero.title || `Find Your Perfect Property`;
+  const heroTitle = hero.title || 'Find Your Perfect Property';
   const heroTitleAccent = hero.titleAccent || `with ${companyName}`;
-  const heroSubtitle = hero.subtitle || 'Discover premium properties, connect with top realtors, and make your real estate dreams a reality.';
+  const heroSubtitle = hero.subtitle || 'Discover premium land and apartments, connect with top realtors, and make your real estate dreams a reality.';
 
-  const fetchProperties = useCallback(async (currentPage = 1) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append('page', String(currentPage));
-      params.append('limit', '12');
+  // Hero image carousel: side images first, then background images, then placeholders
+  const rawHeroImages: string[] = [
+    ...(Array.isArray(hero.heroImages) ? hero.heroImages : hero.heroImage ? [hero.heroImage] : []),
+    ...(Array.isArray(hero.backgroundImages) ? hero.backgroundImages : hero.backgroundImage ? [hero.backgroundImage] : []),
+  ].filter(Boolean);
+  const heroImages = rawHeroImages.length > 0 ? rawHeroImages.map(abs) : PLACEHOLDER_HERO_IMAGES;
 
-      const raw = await api.get(`/properties/listed?${params.toString()}`);
-      const items = Array.isArray(raw) ? raw : (raw?.data || []);
-      const meta = raw?.meta;
-      const tp = meta?.totalPages || 1;
-      const tc = meta?.total ?? items.length;
-      setProperties(items);
-      setTotalPages(tp);
-      setTotalCount(tc);
-      if (currentPage === 1) scWrite('__hp_props__', { items, totalPages: tp, totalCount: tc });
-    } catch {
-      setProperties([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  const [slide, setSlide] = useState(0);
+  const slideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startSlides = useCallback(() => {
+    if (heroImages.length <= 1) return;
+    slideTimer.current = setInterval(() => setSlide((i) => (i + 1) % heroImages.length), 5000);
+  }, [heroImages.length]);
   useEffect(() => {
-    if (!tenantReady) return;
-    fetchProperties(1);
-  }, [tenantReady, fetchProperties]);
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    fetchProperties(newPage);
-    document.getElementById('properties')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Build carousel images list: prefer backgroundImages array, fall back to single backgroundImage
-  const rawCarouselImages: string[] = Array.isArray(hero.backgroundImages) && hero.backgroundImages.length > 0
-    ? hero.backgroundImages
-    : hero.backgroundImage
-      ? [hero.backgroundImage]
-      : [];
-  const carouselImages = rawCarouselImages.length > 0
-    ? rawCarouselImages.map((img: string) => img.startsWith('http') ? img : getImageUrl(img))
-    : PLACEHOLDER_HERO_IMAGES;
-
-  // Right-side hero image carousel
-  const rawSideImages: string[] = Array.isArray(hero.heroImages) && hero.heroImages.length > 0
-    ? hero.heroImages
-    : hero.heroImage
-      ? [hero.heroImage]
-      : [];
-  const sideImages = rawSideImages.map((img: string) =>
-    img.startsWith('http') ? img : getImageUrl(img)
-  );
-
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const carouselTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const [sideIndex, setSideIndex] = useState(0);
-  const sideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const startCarousel = useCallback(() => {
-    if (carouselImages.length <= 1) return;
-    carouselTimer.current = setInterval(() => {
-      setCarouselIndex(prev => (prev + 1) % carouselImages.length);
-    }, 5000);
-  }, [carouselImages.length]);
-
-  const startSideCarousel = useCallback(() => {
-    if (sideImages.length <= 1) return;
-    sideTimer.current = setInterval(() => {
-      setSideIndex(prev => (prev + 1) % sideImages.length);
-    }, 4000);
-  }, [sideImages.length]);
-
-  useEffect(() => {
-    startCarousel();
-    return () => { if (carouselTimer.current) clearInterval(carouselTimer.current); };
-  }, [startCarousel]);
-
-  useEffect(() => {
-    startSideCarousel();
-    return () => { if (sideTimer.current) clearInterval(sideTimer.current); };
-  }, [startSideCarousel]);
-
-  const goToSlide = (idx: number) => {
-    setCarouselIndex(idx);
-    if (carouselTimer.current) clearInterval(carouselTimer.current);
-    startCarousel();
-  };
-
-  const goToSideSlide = (idx: number) => {
-    setSideIndex(idx);
-    if (sideTimer.current) clearInterval(sideTimer.current);
-    startSideCarousel();
+    startSlides();
+    return () => { if (slideTimer.current) clearInterval(slideTimer.current); };
+  }, [startSlides]);
+  const goToSlide = (i: number) => {
+    setSlide(i);
+    if (slideTimer.current) clearInterval(slideTimer.current);
+    startSlides();
   };
 
   const displayEvents = events
@@ -247,474 +225,410 @@ export default function HomePage() {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set('search', searchQuery.trim());
-    if (searchType) params.set('type', searchType);
+    if (searchCategory) params.set('type', CATEGORY_TYPES[searchCategory].join(','));
     router.push(`/properties${params.toString() ? `?${params}` : ''}`);
   };
 
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+  const categoryTiles = ([
+    { key: 'land', icon: LandPlot, blurb: 'Estates, plots and acreage ready to build on', tint: 'from-amber-950/95', anchor: 'land' },
+    { key: 'homes', icon: Home, blurb: 'Apartments, terraces, duplexes and villas', tint: 'from-green-950/95', anchor: 'apartments' },
+    { key: 'commercial', icon: Building2, blurb: 'Offices, shops and mixed-use spaces', tint: 'from-slate-950/95', anchor: 'commercial' },
+  ] as const).filter((t) => t.key !== 'commercial' || listings.commercial.total > 0);
+
+  const nothingListed = !loading && listings.land.total + listings.homes.total + listings.commercial.total === 0;
+
   return (
-    <div className="min-h-dvh bg-[#d4e6c3] dark:bg-gray-950">
+    <div className="min-h-dvh bg-white dark:bg-gray-950">
       <PublicNavbar currentPage="/" />
       <MobileBottomNav />
 
-      {/* ── HERO ── full-bleed image, left-aligned text overlay */}
-      <section
-        className="relative h-[100svh] md:h-[72vh] min-h-[580px] overflow-hidden cursor-pointer md:cursor-auto"
-        onClick={() => { if (window.innerWidth < 768) router.push('/auth/login'); }}
-      >
-        {carouselImages.map((src, idx) => (
-          <div key={idx} className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: idx === carouselIndex ? 1 : 0, zIndex: idx === carouselIndex ? 1 : 0 }}>
-            <Image src={src} alt={`Hero slide ${idx + 1}`} fill className="object-cover" priority={idx === 0} />
-          </div>
-        ))}
-        {/* Strong left-side scrim so white text stays legible over any image */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" style={{ zIndex: 5 }} />
-        {/* Secondary horizontal band that reaches further right */}
-        <div className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-black/40 to-transparent" style={{ zIndex: 5 }} />
-        {/* Bottom-up vignette for the dots row */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" style={{ zIndex: 5 }} />
+      {/* ── HERO ── split: copy + search on the left, image showcase on the right */}
+      <section className="relative overflow-hidden bg-[#0d2b1c] pb-28 pt-28 md:pb-36 md:pt-32">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.07]"
+          style={{ backgroundImage: 'radial-gradient(circle, #86efac 1px, transparent 1px)', backgroundSize: '26px 26px' }}
+        />
+        <div aria-hidden className="absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-green-600/20 blur-3xl" />
 
-        {carouselImages.length > 1 && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" style={{ zIndex: 15 }} onClick={(e) => e.stopPropagation()}>
-            {carouselImages.map((_, idx) => (
-              <button key={idx} onClick={() => goToSlide(idx)}
-                className={`w-2 h-2 rounded-full transition-all ${idx === carouselIndex ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'}`}
-                aria-label={`Slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="absolute inset-0 flex items-end" style={{ zIndex: 10 }}>
-          <div className="container mx-auto px-4 pb-28 md:pb-16 pt-24 max-h-full overflow-hidden">
+        <div className="container relative mx-auto grid items-center gap-12 px-4 lg:grid-cols-2">
+          <div>
             {hero.badgeText && (
-              <div className="inline-flex items-center gap-2 bg-green-700 text-white px-4 py-1.5 rounded-full text-xs font-semibold mb-5 shadow">
-                <Users className="w-3.5 h-3.5" />
-                {hero.badgeText}
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-green-400/30 bg-green-400/10 px-4 py-1.5 text-xs font-semibold text-green-200">
+                <Users className="h-3.5 w-3.5" /> {hero.badgeText}
               </div>
             )}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-3 max-w-xl">
-              {heroTitle}<br />{heroTitleAccent}
+            <h1 className="text-4xl font-extrabold leading-[1.1] text-white md:text-5xl lg:text-6xl">
+              {heroTitle}{' '}
+              <span className="bg-gradient-to-r from-green-300 to-amber-200 bg-clip-text text-transparent">{heroTitleAccent}</span>
             </h1>
-            <p className="text-white/75 text-sm mb-6 max-w-sm leading-relaxed">{heroSubtitle}</p>
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70">{heroSubtitle}</p>
 
-            {/* ── SEARCH BAR ── */}
-            <div className="max-w-2xl" onClick={() => setTypeOpen(false)}>
-              {/* Desktop: handled by standalone section below hero */}
-              <div className="hidden">
-                {/* Location input */}
-                <div className="flex items-center gap-2.5 flex-1 px-5 py-3.5 min-w-0">
-                  <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
+            {/* Search */}
+            <div className="mt-8 max-w-xl rounded-2xl bg-white p-2 shadow-2xl dark:bg-gray-900">
+              <div className="flex gap-1 p-1" role="tablist" aria-label="Property category">
+                {SEARCH_TABS.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={searchCategory === t.value}
+                    onClick={() => setSearchCategory(t.value)}
+                    className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                      searchCategory === t.value
+                        ? 'bg-green-700 text-white'
+                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800">
+                  <MapPin className="h-4 w-4 shrink-0 text-green-600" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="City, area or keyword…"
-                    className="w-full text-sm text-gray-700 dark:text-gray-200 bg-transparent outline-none placeholder:text-gray-400"
+                    placeholder="City, area or estate name…"
+                    aria-label="Search location"
+                    className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400 dark:text-gray-200"
                   />
                 </div>
-                {/* Divider */}
-                <div className="w-px bg-gray-100 dark:bg-gray-700 self-stretch my-3" />
-                {/* Property type */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setTypeOpen(!typeOpen); }}
-                    className="flex items-center gap-2 px-5 py-3.5 text-sm text-gray-600 dark:text-gray-300 hover:text-green-700 transition-colors whitespace-nowrap h-full"
-                  >
-                    <Building2 className="w-4 h-4 text-green-600" />
-                    {PROPERTY_TYPES.find(t => t.value === searchType)?.label || 'All Types'}
-                    <ChevronDown className="w-3.5 h-3.5 opacity-50" />
-                  </button>
-                  {typeOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 min-w-[160px] z-50 overflow-hidden">
-                      {PROPERTY_TYPES.map((t) => (
-                        <button
-                          key={t.value}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setSearchType(t.value); setTypeOpen(false); }}
-                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${searchType === t.value ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {/* Search button */}
                 <button
                   type="button"
                   onClick={handleSearch}
-                  className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white px-6 py-3.5 text-sm font-semibold transition-all whitespace-nowrap"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-600"
                 >
-                  <Search className="w-4 h-4" />
-                  Search
+                  <Search className="h-4 w-4" /> Search
                 </button>
-              </div>
-
-              {/* Mobile: stacked card */}
-              <div className="flex flex-col sm:hidden gap-2" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center gap-2.5 bg-white dark:bg-gray-900 rounded-xl px-4 py-3 shadow-xl">
-                  <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="City, area or keyword…"
-                    className="flex-1 text-sm text-gray-700 bg-transparent outline-none placeholder:text-gray-400"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setTypeOpen(!typeOpen); }}
-                      className="w-full flex items-center gap-2 bg-white dark:bg-gray-900 rounded-xl px-4 py-3 shadow-xl text-sm text-gray-600 dark:text-gray-300"
-                    >
-                      <Building2 className="w-4 h-4 text-green-600" />
-                      <span className="flex-1 text-left truncate">{PROPERTY_TYPES.find(t => t.value === searchType)?.label || 'All Types'}</span>
-                      <ChevronDown className="w-3.5 h-3.5 opacity-50 flex-shrink-0" />
-                    </button>
-                    {typeOpen && (
-                      <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 w-full z-50 overflow-hidden">
-                        {PROPERTY_TYPES.map((t) => (
-                          <button
-                            key={t.value}
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setSearchType(t.value); setTypeOpen(false); }}
-                            className={`w-full text-left px-4 py-2.5 text-sm ${searchType === t.value ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
-                          >
-                            {t.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSearch}
-                    className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shadow-xl whitespace-nowrap"
-                  >
-                    <Search className="w-4 h-4" />
-                    Search
-                  </button>
-                </div>
               </div>
             </div>
 
             {hero.stats && hero.stats.length > 0 && (
-              <div className="flex flex-wrap gap-8 mt-8">
+              <div className="mt-8 flex flex-wrap gap-8">
                 {hero.stats.map((stat: any, i: number) => (
-                  <div key={i} className="text-white">
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <div className="text-white/55 text-xs mt-0.5">{stat.label}</div>
+                  <div key={i}>
+                    <div className="text-2xl font-bold text-white">{stat.value}</div>
+                    <div className="mt-0.5 text-xs text-white/50">{stat.label}</div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          {/* Image showcase */}
+          <div className="relative mx-auto w-full max-w-xl">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl ring-1 ring-white/10 sm:aspect-[5/5]">
+              {heroImages.map((src, i) => (
+                <div key={src + i} className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: i === slide ? 1 : 0 }}>
+                  <Image src={src} alt={`${companyName} property ${i + 1}`} fill sizes="(min-width:1024px) 45vw, 100vw" className="object-cover" priority={i === 0} />
+                </div>
+              ))}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+              {heroImages.length > 1 && (
+                <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
+                  {heroImages.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => goToSlide(i)}
+                      aria-label={`Show image ${i + 1}`}
+                      className={`h-2 rounded-full transition-all ${i === slide ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Floating category chips */}
+            {!loading && listings.land.total > 0 && (
+              <button
+                type="button"
+                onClick={() => scrollTo('land')}
+                className="absolute -left-3 top-10 flex items-center gap-3 rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl backdrop-blur transition-transform hover:-translate-y-0.5 sm:-left-8"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100"><LandPlot className="h-5 w-5 text-amber-600" /></span>
+                <span>
+                  <span className="block text-lg font-bold leading-none text-gray-900">{listings.land.total}</span>
+                  <span className="text-xs text-gray-500">Land listings</span>
+                </span>
+              </button>
+            )}
+            {!loading && listings.homes.total > 0 && (
+              <button
+                type="button"
+                onClick={() => scrollTo('apartments')}
+                className="absolute -right-3 bottom-16 flex items-center gap-3 rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl backdrop-blur transition-transform hover:-translate-y-0.5 sm:-right-8"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100"><Home className="h-5 w-5 text-green-700" /></span>
+                <span>
+                  <span className="block text-lg font-bold leading-none text-gray-900">{listings.homes.total}</span>
+                  <span className="text-xs text-gray-500">Apartments & homes</span>
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* ── DESKTOP/TABLET SEARCH BAR ── inside green banner below hero */}
-      <div className="hidden sm:block bg-green-800 px-4 py-7" onClick={() => setTypeOpen(false)}>
-        <div className="container mx-auto max-w-3xl">
-          <p className="text-green-200/70 text-xs font-medium uppercase tracking-widest text-center mb-4">Find Your Perfect Property</p>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-3">
-            <div className="flex items-stretch gap-2">
-              <div className="flex items-center gap-2.5 flex-1 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 min-w-0">
-                <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="City, area or keyword…"
-                  className="w-full text-sm text-gray-700 dark:text-gray-200 bg-transparent outline-none placeholder:text-gray-400"
-                />
-              </div>
-              <div className="w-px bg-gray-100 dark:bg-gray-700 self-stretch my-1" />
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setTypeOpen(!typeOpen); }}
-                  className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3 text-sm text-gray-600 dark:text-gray-300 hover:text-green-700 transition-colors whitespace-nowrap h-full"
-                >
-                  <Building2 className="w-4 h-4 text-green-600" />
-                  {PROPERTY_TYPES.find(t => t.value === searchType)?.label || 'All Types'}
-                  <ChevronDown className="w-3.5 h-3.5 opacity-50" />
-                </button>
-                {typeOpen && (
-                  <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 min-w-[160px] z-50 overflow-hidden">
-                    {PROPERTY_TYPES.map((t) => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSearchType(t.value); setTypeOpen(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${searchType === t.value ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+      {/* ── CATEGORY TILES ── overlap the hero */}
+      <section className="relative z-10 -mt-16 px-4 md:-mt-20">
+        <div className={`container mx-auto grid gap-4 ${categoryTiles.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+          {categoryTiles.map((tile) => {
+            const data = listings[tile.key];
+            const cover = data.items.find((p: any) => p.images?.length)?.images?.[0];
+            const Icon = tile.icon;
+            return (
               <button
+                key={tile.key}
                 type="button"
-                onClick={handleSearch}
-                className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
+                onClick={() => scrollTo(tile.anchor)}
+                className="group relative h-44 overflow-hidden rounded-2xl text-left shadow-xl md:h-52"
               >
-                <Search className="w-4 h-4" />
-                Search
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── ABOUT / WELCOME ── */}
-      {(about.title || about.content) && (
-        <section id="about" className="py-20 px-4 bg-white dark:bg-gray-900">
-          <div className="container mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left: image */}
-              <div className="relative">
-                <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-xl">
-                  {about.image ? (
-                    <Image src={about.image?.startsWith('http') ? about.image : getImageUrl(about.image)} alt="About" fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-green-800 to-green-600 flex items-center justify-center">
-                      <Building2 className="w-20 h-20 text-white/20" />
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4 bg-green-700 text-white rounded-full px-4 py-1.5 flex items-center gap-2 text-xs font-semibold shadow">
-                    <Home className="w-3.5 h-3.5" /> Find Homes
-                  </div>
-                </div>
-                <div className="absolute -bottom-4 -right-4 w-14 h-14 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center shadow-md border-4 border-white dark:border-gray-900">
-                  <Leaf className="w-6 h-6 text-green-700" />
-                </div>
-              </div>
-              {/* Right: text */}
-              <div>
-                <span className="text-green-700 text-xs font-semibold uppercase tracking-widest">{about.subtitle || 'About Us'}</span>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 mb-5 leading-tight">
-                  {about.title || `Welcome to ${companyName}?`}
-                </h2>
-                {(() => {
-                  const raw = about.content || '';
-                  const plain = raw.replace(/<[^>]+>/g, '').trim();
-                  const full = plain || 'Your trusted partner in real estate. We are dedicated to helping you find the perfect property and providing exceptional service every step of the way.';
-                  const excerpt = full.length > 280 ? full.slice(0, full.lastIndexOf(' ', 280)) + '…' : full;
-                  return <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-6">{excerpt}</p>;
-                })()}
-                {about.items && about.items.length > 0 && (
-                  <div className="space-y-2.5 mb-8">
-                    {about.items.slice(0, 3).map((item: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-700" />
-                        </div>
-                        <span className="text-gray-700 dark:text-gray-300 text-sm">{item.text || item.title || (typeof item === 'string' ? item : '')}</span>
-                      </div>
-                    ))}
-                  </div>
+                {cover ? (
+                  <Image src={abs(cover)} alt="" fill sizes="(min-width:768px) 50vw, 100vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-700 to-green-900" />
                 )}
-                <div className="flex items-center gap-5">
-                  <Link href="/about">
-                    <div className="inline-flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white px-6 py-3 rounded-full text-sm font-semibold transition-all">
-                      <Building2 className="w-4 h-4" /> Learn More
-                    </div>
-                  </Link>
-                  <Link href="/auth/register" className="text-green-700 hover:text-green-600 text-sm font-medium flex items-center gap-1.5 group">
-                    View All <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                {/* Listing covers are text-heavy flyers: darken enough for the label to read */}
+                <div className="absolute inset-0 bg-black/45" />
+                <div className={`absolute inset-0 bg-gradient-to-t ${tile.tint} via-black/40 to-transparent`} />
+                <div className="relative flex h-full flex-col justify-end p-6 text-white">
+                  <Icon className="mb-3 h-7 w-7 text-white/90" />
+                  <h3 className="text-xl font-bold drop-shadow">{CATEGORY_LABELS[tile.key]}</h3>
+                  <p className="mt-1 max-w-xs text-sm text-white/75">{tile.blurb}</p>
+                  <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
+                    {loading ? 'Loading…' : `${data.total} available`}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
-      {/* ── FEATURES / WHY CHOOSE US ── */}
-      {features.features && features.features.length > 0 && (
-        <section id="features" className="py-20 px-4 bg-[#d4e6c3] dark:bg-gray-950">
-          <div className="container mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-center text-green-700 dark:text-green-400 mb-12">
-              {features.title || `Why Choose ${companyName}?`}
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {features.features.slice(0, 10).map((feature: any, i: number) => {
-                const desc: string = feature.description || '';
-                const plain = desc.replace(/<[^>]+>/g, '').trim();
-                const short = plain.length > 80 ? plain.slice(0, 80) + '…' : plain;
-                return (
-                  <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-green-100 dark:border-gray-800 hover:shadow-md transition-shadow">
-                    {feature.image ? (
-                      <div className="relative h-32 overflow-hidden">
-                        <Image src={feature.image?.startsWith('http') ? feature.image : getImageUrl(feature.image || '')} alt={feature.title} fill className="object-cover hover:scale-105 transition-transform duration-500" />
-                      </div>
-                    ) : (
-                      <div className="h-32 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 flex items-center justify-center">
-                        <Building2 className="w-10 h-10 text-green-400" />
-                      </div>
-                    )}
-                    <div className="p-3">
-                      <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1.5">{feature.title}</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-xs mb-3 leading-relaxed">{short}</p>
-                      <Link href="/features">
-                        <div className="inline-flex items-center gap-1 bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold transition-all">
-                          Learn More <ArrowRight className="w-3 h-3" />
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-center gap-2 mt-10">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className={`rounded-full transition-all ${i === 0 ? 'w-6 h-2.5 bg-green-700' : 'w-2.5 h-2.5 bg-green-200 dark:bg-green-900'}`} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── BROWSE PROPERTIES ── */}
-      <section id="properties" className="py-20 px-4 bg-white dark:bg-gray-900">
+      {/* ── LAND & PLOTS ── */}
+      <section id="land" className="scroll-mt-24 px-4 py-20">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
-            <div>
-              <span className="text-green-700 font-semibold text-xs uppercase tracking-wider">Browse</span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-1 text-gray-900 dark:text-white">Available Properties</h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-                {totalCount > 0 ? `${totalCount} properties found` : 'Explore our curated selection of premium properties'}
-              </p>
-            </div>
-            <Link href="/properties" className="text-green-700 hover:text-green-600 font-medium flex items-center gap-2 group text-sm">
-              View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-green-700" />
-              <span className="ml-3 text-gray-500 text-sm">Loading properties…</span>
-            </div>
-          ) : properties.length === 0 ? (
-            <div className="text-center py-20">
-              <Building2 className="w-16 h-16 mx-auto text-green-200 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Properties Found</h3>
-              <p className="text-gray-500 text-sm">Check back later for new listings.</p>
+          <SectionHeading
+            eyebrow="Land & Plots"
+            accent="text-amber-600"
+            title="Secure land in growing locations"
+            subtitle="Verified plots and estates with clear titles — build your future on solid ground."
+            action={listings.land.total > 0 && (
+              <Link href={categoryHref('land')} className="group flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-600">
+                View all land <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
+          />
+          {loading ? <CardSkeletons /> : listings.land.items.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {listings.land.items.map((p: any) => <LandCard key={p.id} property={p} />)}
             </div>
           ) : (
-            <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.slice(0, 6).map((property: any) => {
-                  const TypeIcon = getTypeIcon(property.type);
-                  return (
-                    <Link key={property.id} href={`/properties/${property.id}`} className="group">
-                      <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-green-100 dark:border-gray-700 hover:shadow-md transition-all duration-300">
-                        <div className="relative h-52 overflow-hidden">
-                          {property.images?.length > 0 ? (
-                            <Image src={property.images[0].startsWith('http') ? property.images[0] : getImageUrl(property.images[0])} alt={property.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-                              <TypeIcon className="w-14 h-14 text-green-400" />
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-700 text-white">
-                              {property.type?.replace('_', ' ')}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-green-700 transition-colors line-clamp-1">{property.title}</h3>
-                          <div className="flex items-center gap-1 text-gray-500 text-xs">
-                            <MapPin className="w-3.5 h-3.5 text-green-600" />
-                            <span>{property.city}, {property.state}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-10">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => handlePageChange(page - 1)} className="border-green-200 text-green-700 hover:bg-green-50">
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-                    const pageNum = start + i;
-                    if (pageNum > totalPages) return null;
-                    return (
-                      <Button key={pageNum} variant={pageNum === page ? 'default' : 'outline'} size="sm" onClick={() => handlePageChange(pageNum)}
-                        className={pageNum === page ? 'bg-green-700 hover:bg-green-600 text-white' : 'border-green-200 text-green-700 hover:bg-green-50'}>
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => handlePageChange(page + 1)} className="border-green-200 text-green-700 hover:bg-green-50">
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </>
+            <p className="rounded-2xl border border-dashed border-amber-200 p-10 text-center text-sm text-gray-500">New land listings are coming soon.</p>
           )}
         </div>
       </section>
 
+      {/* ── APARTMENTS & HOMES ── */}
+      <section id="apartments" className="scroll-mt-24 bg-[#f1f7ec] px-4 py-20 dark:bg-gray-900">
+        <div className="container mx-auto">
+          <SectionHeading
+            eyebrow="Apartments & Homes"
+            title="Move-in ready places to live"
+            subtitle="Apartments, terraces, duplexes and villas finished to a high standard."
+            action={listings.homes.total > 0 && (
+              <Link href={categoryHref('homes')} className="group flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-600">
+                View all apartments <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
+          />
+          {loading ? <CardSkeletons /> : listings.homes.items.length > 0 ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {listings.homes.items.map((p: any) => <HomeCard key={p.id} property={p} />)}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-dashed border-green-200 bg-white/60 p-10 text-center text-sm text-gray-500 dark:bg-transparent">New apartments are coming soon.</p>
+          )}
+        </div>
+      </section>
+
+      {/* ── COMMERCIAL ── only when there are commercial listings */}
+      {listings.commercial.total > 0 && (
+        <section id="commercial" className="scroll-mt-24 px-4 py-20">
+          <div className="container mx-auto">
+            <SectionHeading
+              eyebrow="Commercial"
+              accent="text-slate-600"
+              title="Spaces for business"
+              action={(
+                <Link href={categoryHref('commercial')} className="group flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-600">
+                  View all commercial <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              )}
+            />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {listings.commercial.items.map((p: any) => <HomeCard key={p.id} property={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {nothingListed && (
+        <p className="px-4 pb-10 text-center text-sm text-gray-500">
+          Browse our <Link href="/properties" className="font-semibold text-green-700 underline">full catalogue</Link> for the latest availability.
+        </p>
+      )}
+
+      {/* ── ABOUT ── */}
+      {(about.title || about.content) && (
+        <section id="about" className="px-4 py-20">
+          <div className="container mx-auto grid items-center gap-12 lg:grid-cols-2">
+            <div className="order-2 lg:order-1">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-green-700">{about.subtitle || 'About Us'}</span>
+              <h2 className="mb-5 mt-2 text-3xl font-bold leading-tight text-gray-900 dark:text-white md:text-4xl">
+                {about.title || `Welcome to ${companyName}`}
+              </h2>
+              {(() => {
+                const plain = (about.content || '').replace(/<[^>]+>/g, '').trim();
+                const full = plain || 'Your trusted partner in real estate. We are dedicated to helping you find the perfect property and providing exceptional service every step of the way.';
+                const excerpt = full.length > 320 ? full.slice(0, full.lastIndexOf(' ', 320)) + '…' : full;
+                return <p className="mb-6 text-sm leading-relaxed text-gray-600 dark:text-gray-400">{excerpt}</p>;
+              })()}
+              {about.items && about.items.length > 0 && (
+                <ul className="mb-8 space-y-3">
+                  {about.items.slice(0, 4).map((item: any, i: number) => (
+                    <li key={i} className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
+                      {item.text || item.title || (typeof item === 'string' ? item : '')}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Link href="/about" className="inline-flex items-center gap-2 rounded-full bg-green-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-600">
+                Learn more about us <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="relative order-1 lg:order-2">
+              <div className="relative h-[380px] overflow-hidden rounded-[2rem] shadow-xl md:h-[440px]">
+                {about.image ? (
+                  <Image src={abs(about.image)} alt={`About ${companyName}`} fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-800 to-green-600">
+                    <Building2 className="h-20 w-20 text-white/20" />
+                  </div>
+                )}
+              </div>
+              {stats.stats?.[0] && (
+                <div className="absolute -bottom-6 left-6 rounded-2xl bg-white px-6 py-4 shadow-xl dark:bg-gray-900">
+                  <div className="text-2xl font-extrabold text-green-700">{stats.stats[0].value}</div>
+                  <div className="text-xs text-gray-500">{stats.stats[0].label}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── WHY CHOOSE US ── */}
+      {features.features && features.features.length > 0 && (
+        <section id="features" className="bg-[#f1f7ec] px-4 py-20 dark:bg-gray-900">
+          <div className="container mx-auto">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-green-700">Why us</span>
+              <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">{features.title || `Why Choose ${companyName}?`}</h2>
+            </div>
+            <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
+              {features.features.slice(0, 8).map((feature: any, i: number) => {
+                const plain = (feature.description || '').replace(/<[^>]+>/g, '').trim();
+                const short = plain.length > 110 ? plain.slice(0, 110) + '…' : plain;
+                return (
+                  <Link key={i} href="/features" className="group flex flex-col rounded-2xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:bg-gray-950">
+                    {feature.image ? (
+                      <div className="relative mb-4 h-12 w-12 overflow-hidden rounded-xl">
+                        <Image src={abs(feature.image)} alt="" fill sizes="48px" className="object-cover" />
+                      </div>
+                    ) : (
+                      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-700 text-lg font-bold text-white">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                    )}
+                    <h3 className="mb-2 font-bold text-gray-900 dark:text-white">{feature.title}</h3>
+                    <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">{short}</p>
+                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-green-700">
+                      Learn more <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── STATS ── */}
+      {stats.stats && stats.stats.length > 0 && (
+        <section className="bg-[#0d2b1c] px-4 py-14">
+          <div className="container mx-auto grid grid-cols-2 gap-8 text-center md:grid-cols-4">
+            {stats.stats.map((stat: any, i: number) => {
+              const StatIcon = ICON_MAP[stat.icon] || [Building2, TrendingUp, Users, Star][i % 4];
+              return (
+                <div key={i}>
+                  <StatIcon className="mx-auto mb-3 h-7 w-7 text-green-300" />
+                  <div className="text-3xl font-extrabold text-white">{stat.value}</div>
+                  <div className="mt-1 text-sm text-white/60">{stat.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ── EVENTS ── */}
       {displayEvents.length > 0 && (
-        <section className="py-20 px-4 bg-[#d4e6c3] dark:bg-gray-950">
+        <section className="px-4 py-20">
           <div className="container mx-auto">
-            <div className="mb-12">
-              <span className="text-green-700 font-semibold text-xs uppercase tracking-wider">Events</span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-1 text-gray-900 dark:text-white">Upcoming Events</h2>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SectionHeading eyebrow="Events" title="Upcoming Events" />
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {displayEvents.map((ev) => {
                 const spotsLeft = ev.maxAttendees ? ev.maxAttendees - (ev._count?.registrations ?? 0) : null;
                 return (
                   <Link key={ev.id} href={`/event/${ev.slug}`} className="group">
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-green-100 dark:border-gray-800 hover:shadow-md transition-all flex flex-col h-full">
+                    <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-lg dark:bg-gray-900 dark:ring-gray-800">
                       {ev.bannerUrl ? (
                         <div className="relative h-44 overflow-hidden">
-                          <Image src={ev.bannerUrl} alt={ev.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <Image src={ev.bannerUrl} alt={ev.title} fill sizes="(min-width:1024px) 33vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                           {ev.isFeatured && (
-                            <div className="absolute top-3 left-3">
-                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-700 text-white flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-white" /> Featured
-                              </span>
-                            </div>
+                            <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-green-700 px-2 py-1 text-xs font-semibold text-white">
+                              <Star className="h-3 w-3 fill-white" /> Featured
+                            </span>
                           )}
                         </div>
                       ) : (
-                        <div className="h-44 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 flex items-center justify-center">
-                          <Calendar className="w-14 h-14 text-green-400" />
+                        <div className="flex h-44 items-center justify-center bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30">
+                          <Calendar className="h-14 w-14 text-green-400" />
                         </div>
                       )}
-                      <div className="p-5 flex flex-col gap-3 flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-green-700 transition-colors line-clamp-2">{ev.title}</h3>
+                      <div className="flex flex-1 flex-col gap-3 p-5">
+                        <h3 className="line-clamp-2 font-semibold text-gray-900 transition-colors group-hover:text-green-700 dark:text-white">{ev.title}</h3>
                         <div className="space-y-1.5 text-xs text-gray-500">
-                          <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-green-600" />{new Date(ev.eventDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                          <div className="flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-green-600" />{new Date(ev.eventDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
                           <div className="flex items-center gap-2">
-                            {ev.locationType === 'online' ? <Globe className="w-3.5 h-3.5 text-green-600" /> : <MapPin className="w-3.5 h-3.5 text-green-600" />}
+                            {ev.locationType === 'online' ? <Globe className="h-3.5 w-3.5 text-green-600" /> : <MapPin className="h-3.5 w-3.5 text-green-600" />}
                             <span className="capitalize">{ev.locationType}{ev.locationDetails ? ` — ${ev.locationDetails}` : ''}</span>
                           </div>
                           {ev._count?.registrations !== undefined && (
-                            <div className="flex items-center gap-2"><Users className="w-3.5 h-3.5 text-green-600" />{ev._count.registrations} registered{spotsLeft !== null ? ` · ${spotsLeft} spots left` : ''}</div>
+                            <div className="flex items-center gap-2"><Users className="h-3.5 w-3.5 text-green-600" />{ev._count.registrations} registered{spotsLeft !== null ? ` · ${spotsLeft} spots left` : ''}</div>
                           )}
                         </div>
-                        <div className="mt-auto pt-3 border-t border-green-50 dark:border-gray-800">
-                          <span className="text-green-700 text-sm font-medium flex items-center gap-1">Register Now <ArrowRight className="w-3.5 h-3.5" /></span>
-                        </div>
+                        <span className="mt-auto flex items-center gap-1 border-t border-gray-100 pt-3 text-sm font-medium text-green-700 dark:border-gray-800">
+                          Register Now <ArrowRight className="h-3.5 w-3.5" />
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -727,70 +641,32 @@ export default function HomePage() {
 
       {/* ── AGENTS ── */}
       {agents.agents && agents.agents.length > 0 && (
-        <section className="py-20 px-4 bg-white dark:bg-gray-900">
+        <section className="bg-[#f1f7ec] px-4 py-20 dark:bg-gray-900">
           <div className="container mx-auto">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-12">
-              <div>
-                <span className="text-green-700 font-semibold text-xs uppercase tracking-wider">Our Team</span>
-                <h2 className="text-3xl md:text-4xl font-bold mt-1 text-gray-900 dark:text-white">Meet Our Top Realtors</h2>
-              </div>
-              <Link href="/auth/register" className="text-green-700 hover:text-green-600 font-medium flex items-center gap-2 group text-sm">
-                View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {agents.agents.map((agent: any, i: number) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-green-100 dark:border-gray-700 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="relative flex-shrink-0">
-                      {(() => {
-                        const raw = agent.photo || agent.image || agent.avatar || '';
-                        const photo = raw.startsWith('http') ? raw : getImageUrl(raw);
-                        return photo
-                          ? <Image src={photo} alt={agent.name} width={52} height={52} className="rounded-full object-cover" />
-                          : <div className="w-[52px] h-[52px] rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-800 dark:text-green-200 font-semibold text-sm">{(agent.name || '?').trim().charAt(0).toUpperCase()}</div>;
-                      })()}
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-700 rounded-full border-2 border-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{agent.name}</h3>
-                      <p className="text-xs text-gray-500">{typeof agent.role === 'string' ? agent.role : agent.role?.name || ''}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-green-50 dark:border-gray-700">
-                    <div className="flex items-center gap-0.5">
-                      {[...Array(Number(agent.rating) || 5)].map((_, j) => (
-                        <Star key={j} className="w-3.5 h-3.5 fill-green-600 text-green-600" />
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500">{agent.deals} deals</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── PLATFORM FEATURES ── */}
-      {platformFeatures.features && platformFeatures.features.length > 0 && (
-        <section className="py-20 px-4 bg-green-800 dark:bg-green-950">
-          <div className="container mx-auto">
-            <div className="text-center mb-12">
-              <span className="text-green-300 text-xs font-semibold uppercase tracking-widest">Platform</span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 text-white">Everything You Need to Succeed</h2>
-              <p className="text-green-200/70 text-sm mt-2 max-w-xl mx-auto">Comprehensive tools for managing your real estate business</p>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-              {platformFeatures.features.map((feature: any, i: number) => {
-                const FeatureIcon = ICON_MAP[feature.icon] || Zap;
+            <SectionHeading eyebrow="Our Team" title="Meet Our Top Realtors" />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {agents.agents.map((agent: any, i: number) => {
+                const raw = agent.photo || agent.image || agent.avatar || '';
+                const photo = raw ? abs(raw) : '';
                 return (
-                  <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-5 hover:bg-white/15 transition-all group">
-                    <div className="w-10 h-10 rounded-xl bg-green-600/40 flex items-center justify-center mb-4 group-hover:bg-green-500 transition-all">
-                      <FeatureIcon className="w-5 h-5 text-green-200 group-hover:text-white transition-colors" />
+                  <div key={i} className="rounded-2xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-lg dark:bg-gray-950">
+                    {photo ? (
+                      <Image src={photo} alt={agent.name} width={88} height={88} className="mx-auto h-[88px] w-[88px] rounded-full object-cover ring-4 ring-green-100" />
+                    ) : (
+                      <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-full bg-green-100 text-2xl font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-200">
+                        {(agent.name || '?').trim().charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <h3 className="mt-4 font-semibold text-gray-900 dark:text-white">{agent.name}</h3>
+                    <p className="text-xs text-gray-500">{typeof agent.role === 'string' ? agent.role : agent.role?.name || ''}</p>
+                    <div className="mt-4 flex items-center justify-center gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+                      <span className="flex items-center gap-0.5">
+                        {[...Array(Math.min(5, Number(agent.rating) || 5))].map((_, j) => (
+                          <Star key={j} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        ))}
+                      </span>
+                      {agent.deals !== undefined && <span className="text-xs text-gray-500">{agent.deals} deals</span>}
                     </div>
-                    <h3 className="font-semibold text-white text-sm mb-1.5">{feature.title}</h3>
-                    <p className="text-green-200/60 text-xs leading-relaxed">{feature.description}</p>
                   </div>
                 );
               })}
@@ -799,157 +675,106 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── STATS ── */}
-      {stats.stats && stats.stats.length > 0 && (
-        <section className="py-16 px-4 bg-[#d4e6c3] dark:bg-gray-950">
+      {/* ── PLATFORM FEATURES ── */}
+      {platformFeatures.features && platformFeatures.features.length > 0 && (
+        <section className="px-4 py-20">
           <div className="container mx-auto">
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 md:p-12 shadow-sm border border-green-100 dark:border-gray-800">
-              <div className="grid md:grid-cols-4 gap-8 text-center">
-                {stats.stats.map((stat: any, i: number) => {
-                  const StatIcon = ICON_MAP[stat.icon] || [Building2, TrendingUp, Users, Star][i % 4];
-                  return (
-                    <div key={i} className="group">
-                      <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-green-50 dark:bg-green-900/40 flex items-center justify-center group-hover:bg-green-700 transition-all">
-                        <StatIcon className="w-7 h-7 text-green-700 group-hover:text-white transition-colors" />
-                      </div>
-                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</div>
-                      <div className="text-gray-500 text-sm">{stat.label}</div>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="mx-auto mb-12 max-w-2xl text-center">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-green-700">Platform</span>
+              <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">Everything You Need to Succeed</h2>
+              <p className="mt-2 text-sm text-gray-500">Comprehensive tools for managing your real estate business</p>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {platformFeatures.features.map((feature: any, i: number) => {
+                const FeatureIcon = ICON_MAP[feature.icon] || Zap;
+                return (
+                  <div key={i} className="rounded-2xl border border-gray-100 p-6 transition-colors hover:border-green-200 hover:bg-green-50/50 dark:border-gray-800 dark:hover:bg-gray-900">
+                    <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
+                      <FeatureIcon className="h-5 w-5 text-green-700" />
+                    </span>
+                    <h3 className="mb-1.5 text-sm font-semibold text-gray-900 dark:text-white">{feature.title}</h3>
+                    <p className="text-xs leading-relaxed text-gray-500">{feature.description}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
       )}
 
       {/* ── CTA ── */}
-      <section className="py-16 md:py-20 px-4 bg-[#d4e6c3] dark:bg-gray-900">
-        <div className="container mx-auto">
-          <div className="relative rounded-3xl overflow-hidden flex flex-col md:flex-row bg-gray-950 min-h-[340px]">
-            {/* Decorative right panel */}
-            <div className="relative order-first md:order-last w-full h-44 md:h-auto md:w-[38%] flex-shrink-0 overflow-hidden bg-green-900">
-              <div className="absolute inset-0 opacity-[0.12]"
-                style={{ backgroundImage: 'radial-gradient(circle, #4ade80 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
-              <div className="absolute inset-0 bg-gradient-to-br from-green-800/50 via-green-900 to-gray-950" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Building2 className="w-36 h-36 text-green-400/10" strokeWidth={0.5} />
-              </div>
-              {(stats.stats?.[0] || totalCount > 0) && (
-                <div className="absolute bottom-5 right-5 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3">
-                  <div className="text-xl font-bold text-white">{stats.stats?.[0]?.value || `${totalCount}+`}</div>
-                  <div className="text-xs text-green-300/70">{stats.stats?.[0]?.label || 'Properties Listed'}</div>
-                </div>
-              )}
-            </div>
-            {/* Content */}
-            <div className="flex flex-col justify-center p-8 md:p-12 lg:p-14 flex-1">
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-6 h-px bg-green-500" />
-                <span className="text-green-400 text-xs font-semibold uppercase tracking-widest">Get Started</span>
-              </div>
-              <h2 className="text-2xl md:text-4xl font-bold text-white leading-tight mb-4 max-w-md">
-                {cta.title || `Ready to Find Your Perfect Property with ${companyName}?`}
-              </h2>
-              <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-sm">
-                {cta.subtitle || "Whether you're buying, selling, or investing — our expert team guides you every step of the way."}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link href={cta.primaryButtonLink || '/auth/register'}>
-                  <div className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all">
-                    {cta.primaryButtonText || 'Get Started'} <ArrowRight className="w-4 h-4" />
-                  </div>
-                </Link>
-                <Link href={cta.secondaryButtonLink || '/contact'}>
-                  <div className="inline-flex items-center gap-2 border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all">
-                    {cta.secondaryButtonText || 'Contact Us'}
-                  </div>
-                </Link>
-              </div>
+      <section className="px-4 pb-20">
+        <div className="container relative mx-auto overflow-hidden rounded-[2rem] bg-gradient-to-br from-green-700 via-green-800 to-[#0d2b1c] px-8 py-14 text-center md:px-16">
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '22px 22px' }}
+          />
+          <div className="relative mx-auto max-w-2xl">
+            <h2 className="text-3xl font-bold leading-tight text-white md:text-4xl">
+              {cta.title || `Ready to Find Your Perfect Property with ${companyName}?`}
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-white/70">
+              {cta.subtitle || "Whether you're buying land, an apartment, or investing — our team guides you every step of the way."}
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link href={cta.primaryButtonLink || '/auth/register'} className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-50">
+                {cta.primaryButtonText || 'Get Started'} <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href={cta.secondaryButtonLink || '/contact'} className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+                {cta.secondaryButtonText || 'Contact Us'}
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CONTACT ── */}
-      {(contact.phone || contact.email || contact.address) && (
-        <section id="contact" className="py-20 px-4 bg-white dark:bg-gray-900">
-          <div className="container mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12">
-              <div>
-                <span className="text-green-700 text-xs font-semibold uppercase tracking-widest">Get In Touch</span>
-                <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-6 text-gray-900 dark:text-white">Contact Us</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-8">Have questions? We&apos;d love to hear from you.</p>
-                <div className="space-y-5">
-                  {[
-                    contact.phone && { icon: Phone, label: 'Phone', value: contact.phone },
-                    contact.email && { icon: Mail, label: 'Email', value: contact.email },
-                    contact.address && { icon: MapPin, label: 'Address', value: contact.address },
-                    contact.hours && { icon: Clock, label: 'Working Hours', value: contact.hours },
-                  ].filter(Boolean).map((item: any, i: number) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-green-50 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
-                        <item.icon className="w-5 h-5 text-green-700" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">{item.label}</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{item.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-green-50 dark:bg-gray-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-5 min-h-[280px] border border-green-100 dark:border-gray-700">
-                <div className="w-14 h-14 rounded-2xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                  <Mail className="w-7 h-7 text-green-700" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Send Us a Message</h3>
-                  <p className="text-gray-500 text-xs max-w-xs">Ready to connect? Visit our contact page and we&apos;ll get back to you shortly.</p>
-                </div>
-                <Link href="/contact">
-                  <div className="inline-flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white px-6 py-3 rounded-full text-sm font-semibold transition-all">
-                    Go to Contact Page <ArrowRight className="w-4 h-4" />
+      {/* ── CONTACT + MAP ── */}
+      <section id="contact" className="bg-[#f1f7ec] px-4 py-20 dark:bg-gray-900">
+        <div className="container mx-auto grid gap-10 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-green-700">Get In Touch</span>
+            <h2 className="mb-3 mt-2 text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">Visit or contact us</h2>
+            <p className="mb-8 text-sm text-gray-600 dark:text-gray-400">Have questions? We&apos;d love to hear from you.</p>
+            <div className="space-y-5">
+              {[
+                contact.phone && { icon: Phone, label: 'Phone', value: contact.phone },
+                contact.email && { icon: Mail, label: 'Email', value: contact.email },
+                contact.address && { icon: MapPin, label: 'Address', value: contact.address },
+                contact.hours && { icon: Clock, label: 'Working Hours', value: contact.hours },
+              ].filter(Boolean).map((item: any, i: number) => (
+                <div key={i} className="flex items-center gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm dark:bg-gray-950">
+                    <item.icon className="h-5 w-5 text-green-700" />
+                  </span>
+                  <div>
+                    <p className="text-xs text-gray-400">{item.label}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{item.value}</p>
                   </div>
-                </Link>
-              </div>
+                </div>
+              ))}
             </div>
+            <Link href="/contact" className="mt-8 inline-flex items-center gap-2 rounded-full bg-green-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-600">
+              Send us a message <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        </section>
-      )}
-
-      {/* ── MAP ── */}
-      <section className="bg-[#d4e6c3] dark:bg-gray-950">
-        <div className="container mx-auto px-4 pt-16 pb-8">
-          <div className="text-center mb-8">
-            <span className="text-green-700 text-xs font-semibold uppercase tracking-widest">Our Location</span>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-1">Find Us</h2>
-            {contact.address && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 flex items-center justify-center gap-1.5">
-                <MapPin className="w-4 h-4 text-green-700 flex-shrink-0" />
-                {contact.address}
-              </p>
-            )}
+          <div className="h-[360px] overflow-hidden rounded-[2rem] shadow-xl lg:col-span-3 lg:h-auto lg:min-h-[420px]">
+            <iframe
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(contact.mapCoordinates?.trim() || contact.address || companyName + ' real estate')}&output=embed&hl=en&z=16`}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Office Location"
+            />
           </div>
-        </div>
-        <div className="relative w-full overflow-hidden" style={{ height: '420px' }}>
-          <iframe
-            src={`https://maps.google.com/maps?q=${encodeURIComponent(contact.mapCoordinates?.trim() || contact.address || companyName + ' real estate')}&output=embed&hl=en&z=16`}
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Office Location"
-          />
-          {/* green tint overlay strip at top to blend with section */}
-          <div className="absolute top-0 left-0 right-0 h-3 bg-[#d4e6c3] dark:bg-gray-950" />
         </div>
       </section>
 
       {/* Extra bottom padding on mobile so content clears the floating bottom nav */}
-      <div className="md:hidden h-24" />
+      <div className="h-24 md:hidden" />
 
       <PublicFooter cmsData={cms?.footer} />
     </div>
