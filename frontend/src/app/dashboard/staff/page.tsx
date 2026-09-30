@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { AwardBanner } from '@/components/award-banner';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
 import {
   CheckSquare,
   Clock,
@@ -67,9 +68,9 @@ const miniChartData = [
 const getStatusBadge = (status: string) => {
   switch (status) {
     case 'IN_PROGRESS':
-      return <Badge className="bg-[#22c55e]/10 text-[#22c55e] hover:bg-[#22c55e]/20">In Progress</Badge>;
+      return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">In Progress</Badge>;
     case 'TODO':
-      return <Badge className="bg-[#fca639]/10 text-[#fca639] hover:bg-[#fca639]/20">To Do</Badge>;
+      return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">To Do</Badge>;
     case 'IN_REVIEW':
       return <Badge className="bg-purple-100 text-purple-600 hover:bg-purple-200">In Review</Badge>;
     case 'COMPLETED':
@@ -239,7 +240,7 @@ export default function StaffDashboard() {
 
   // Task distribution for pie chart
   const taskDistribution = useMemo(() => [
-    { name: 'Completed', value: completedThisMonth || 1, color: '#22c55e' },
+    { name: 'Completed', value: completedThisMonth || 1, color: '#15803d' },
     { name: 'Pending', value: pendingTasks || 1, color: '#fca639' },
     { name: 'Blocked', value: 0, color: '#ef4444' },
   ].filter(t => t.value > 0), [completedThisMonth, pendingTasks]);
@@ -258,18 +259,18 @@ export default function StaffDashboard() {
 
   // Bottom stats
   const bottomStats = [
-    { label: 'Tasks Completed', value: String(completedThisMonth), icon: CheckCircle2, color: '#22c55e' },
+    { label: 'Tasks Completed', value: String(completedThisMonth), icon: CheckCircle2, color: '#15803d' },
     { label: 'Pending Tasks', value: String(pendingTasks), icon: CheckSquare, color: '#fca639' },
-    { label: 'Leave Balance', value: `${totalLeave} days`, icon: CalendarDays, color: '#22c55e' },
+    { label: 'Leave Balance', value: `${totalLeave} days`, icon: CalendarDays, color: '#15803d' },
     { label: 'Team Members', value: String(teamMembers), icon: Users, color: '#fca639' },
   ];
 
   // Gradient cards
   const gradientCards = [
-    { title: 'Pending Tasks', value: String(pendingTasks), subtitle: 'Assigned to you', gradient: 'from-[#16a34a] to-[#22c55e]', icon: CheckSquare },
-    { title: 'Annual Leave', value: String(annualLeave), subtitle: 'Days remaining', gradient: 'from-[#fca639] to-[#fdb95c]', icon: CalendarDays },
-    { title: 'Sick Leave', value: String(sickLeave), subtitle: 'Days remaining', gradient: 'from-[#22c55e] to-[#14956e]', icon: CalendarDays },
-    { title: 'Reviews', value: String(upcomingReviews.length), subtitle: 'Upcoming', gradient: 'from-[#fca639] to-[#e8953a]', icon: Target },
+    { title: 'Pending Tasks', value: String(pendingTasks), subtitle: 'Assigned to you', gradient: 'from-primary to-primary-800', icon: CheckSquare },
+    { title: 'Annual Leave', value: String(annualLeave), subtitle: 'Days remaining', gradient: 'from-amber-500 to-orange-600', icon: CalendarDays },
+    { title: 'Sick Leave', value: String(sickLeave), subtitle: 'Days remaining', gradient: 'from-primary-800 to-brand-deep', icon: CalendarDays },
+    { title: 'Reviews', value: String(upcomingReviews.length), subtitle: 'Upcoming', gradient: 'from-slate-800 to-slate-950', icon: Target },
   ];
 
   if (loading) {
@@ -282,12 +283,20 @@ export default function StaffDashboard() {
 
   return (
     <div className="space-y-6">
+      <WelcomeBanner
+        subtitle={`${pendingTasks} pending task${pendingTasks === 1 ? '' : 's'} · ${annualLeave} days of annual leave left`}
+        actions={[
+          { label: 'My tasks', href: '/dashboard/staff/tasks', icon: CheckSquare },
+          { label: 'Attendance', href: '/dashboard/staff/attendance', icon: CalendarDays },
+          { label: 'Leave', href: '/dashboard/staff/leave', icon: CalendarDays },
+        ]}
+      />
       <AwardBanner />
 
       {/* Staff of the Month Spotlight */}
       {staffOfMonth && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg border-0">
+          <Card className="bg-gradient-to-br from-primary to-primary-800 text-white shadow-lg border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Crown className="w-5 h-5 text-yellow-300" />
@@ -382,15 +391,15 @@ export default function StaffDashboard() {
                     <AreaChart data={attendanceChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#15803d" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#15803d" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                       <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
                       <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                      <Area type="monotone" dataKey="hours" stroke="#22c55e" strokeWidth={2.5} fill="url(#colorHours)" name="Hours Worked" dot={{ r: 4, fill: '#22c55e', stroke: '#fff', strokeWidth: 2 }} />
+                      <Area type="monotone" dataKey="hours" stroke="#15803d" strokeWidth={2.5} fill="url(#colorHours)" name="Hours Worked" dot={{ r: 4, fill: '#15803d', stroke: '#fff', strokeWidth: 2 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -488,8 +497,8 @@ export default function StaffDashboard() {
             <CardContent className="p-5">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#22c55e]/10 flex items-center justify-center">
-                    <Link className="w-5 h-5 text-[#22c55e]" />
+                  <div className="w-10 h-10 rounded-full bg-[#15803d]/10 flex items-center justify-center">
+                    <Link className="w-5 h-5 text-[#15803d]" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Your Referral Link</p>
@@ -565,12 +574,12 @@ export default function StaffDashboard() {
                       <TableCell>
                         <div className="flex gap-1">
                           {task.status === 'TODO' && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[#22c55e] hover:bg-[#22c55e]/10" onClick={() => handleStartTask(task.id)}>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[#15803d] hover:bg-[#15803d]/10" onClick={() => handleStartTask(task.id)}>
                               <Play className="w-3 h-3" />
                             </Button>
                           )}
                           {task.status === 'IN_PROGRESS' && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[#22c55e] hover:bg-[#22c55e]/10" onClick={() => handleSubmitForReview(task.id)} title="Submit for Review">
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[#15803d] hover:bg-[#15803d]/10" onClick={() => handleSubmitForReview(task.id)} title="Submit for Review">
                               <Eye className="w-3 h-3" />
                             </Button>
                           )}
@@ -600,7 +609,7 @@ export default function StaffDashboard() {
             <div className="grid gap-4 md:grid-cols-4">
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
                 <a href="/dashboard/staff/leave">
-                  <CalendarDays className="w-6 h-6 text-[#22c55e]" />
+                  <CalendarDays className="w-6 h-6 text-[#15803d]" />
                   <span>Request Leave</span>
                 </a>
               </Button>
@@ -612,7 +621,7 @@ export default function StaffDashboard() {
               </Button>
               <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" asChild>
                 <a href="/dashboard/staff/team">
-                  <Users className="w-6 h-6 text-[#22c55e]" />
+                  <Users className="w-6 h-6 text-[#15803d]" />
                   <span>Team Directory</span>
                 </a>
               </Button>

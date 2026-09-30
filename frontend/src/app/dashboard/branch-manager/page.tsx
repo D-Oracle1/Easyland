@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
 import { api } from '@/lib/api';
 import { getUser } from '@/lib/auth-storage';
 import Link from 'next/link';
@@ -117,27 +118,14 @@ export default function BranchManagerDashboard() {
   ];
 
   return (
-    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 p-4 md:p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Building2 className="w-5 h-5 text-primary" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {branch?.name ?? 'Branch Dashboard'}
-            </h1>
-            <Badge variant="outline" className="text-xs">{branch?.code}</Badge>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-gray-500">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>{branch?.city}, {branch?.state}</span>
-          </div>
-        </div>
-        <Button onClick={load} variant="outline" size="sm" className="gap-2">
+      <WelcomeBanner subtitle={branch ? `${branch.name}${branch.code ? ` (${branch.code})` : ''} · ${[branch.city, branch.state].filter(Boolean).join(', ')}` : 'Branch dashboard'}>
+        <Button onClick={load} variant="ghost" size="sm" className="gap-2 bg-white/10 text-white hover:bg-white/20 hover:text-white">
           <RefreshCw className="w-4 h-4" />
           Refresh
         </Button>
-      </div>
+      </WelcomeBanner>
 
       {/* Quick Links */}
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">

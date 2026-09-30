@@ -21,6 +21,9 @@ import {
   Link,
 } from 'lucide-react';
 import { AwardBanner } from '@/components/award-banner';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
+import { TierBadge, tierLabel } from '@/components/tier/tier-badge';
+import { useMyLoyalty } from '@/components/tier/use-my-tier';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -63,13 +66,7 @@ import {
 
 type Period = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
-const tierProgress: Record<string, { min: number; max: number; next: string | null }> = {
-  BRONZE: { min: 0, max: 5000, next: 'SILVER' },
-  SILVER: { min: 5000, max: 15000, next: 'GOLD' },
-  GOLD: { min: 15000, max: 50000, next: 'PLATINUM' },
-  PLATINUM: { min: 50000, max: 100000, next: null },
-};
-
+// Rank progress comes from /loyalty/my (total sales value) — see useMyLoyalty
 function getLast12Months() {
   const months: { label: string; month: number; year: number }[] = [];
   const now = new Date();
@@ -171,34 +168,34 @@ export default function RealtorDashboard() {
   const clients = stats?.clients || 0;
   const properties = stats?.properties || 0;
 
-  const tier = loyalty?.tier || 'BRONZE';
-  const points = loyalty?.points || 0;
-  const currentTierInfo = tierProgress[tier] || tierProgress.BRONZE;
-  const progressToNext = ((points - currentTierInfo.min) / (currentTierInfo.max - currentTierInfo.min)) * 100;
+  const myLoyalty = useMyLoyalty();
+  const tier = myLoyalty?.currentTier || loyalty?.tier || 'BRONZE';
+  const points = myLoyalty?.totalPoints ?? loyalty?.points ?? 0;
+  const progressToNext = myLoyalty?.progressToNextTier ?? 0;
 
   const earningsBreakdown = useMemo(() => [
-    { name: 'Net Earnings', value: Number(filteredNetEarnings), color: '#22c55e' },
+    { name: 'Net Earnings', value: Number(filteredNetEarnings), color: '#15803d' },
     { name: 'Tax Deducted', value: Number(filteredTax), color: '#fca639' },
   ].filter((e) => e.value > 0), [filteredNetEarnings, filteredTax]);
 
   const bottomStats = [
-    { label: 'Active Listings', value: String(properties), icon: Home, color: '#22c55e' },
+    { label: 'Active Listings', value: String(properties), icon: Home, color: '#15803d' },
     { label: 'Total Clients', value: String(clients), icon: Users, color: '#fca639' },
-    { label: 'Loyalty Points', value: points.toLocaleString(), icon: Award, color: '#22c55e' },
+    { label: 'Loyalty Points', value: points.toLocaleString(), icon: Award, color: '#15803d' },
   ];
 
   const gradientCards = [
-    { title: 'Total Sales', value: String(totalSales), subtitle: `${formatCurrency(stats?.totalSalesValue || 0)} value`, gradient: 'from-[#16a34a] to-[#22c55e]', icon: Target },
-    { title: `${periodLabel} Sales`, value: String(filteredSales), subtitle: periodLabel, gradient: 'from-[#fca639] to-[#fdb95c]', icon: TrendingUp },
-    { title: 'Commission', value: formatCurrency(filteredCommission), subtitle: periodLabel, gradient: 'from-[#22c55e] to-[#14956e]', icon: NairaSign },
-    { title: 'Net Earnings', value: formatCurrency(filteredNetEarnings), subtitle: `After tax`, gradient: 'from-[#fca639] to-[#e8953a]', icon: Zap },
+    { title: 'Total Sales', value: String(totalSales), subtitle: `${formatCurrency(stats?.totalSalesValue || 0)} value`, gradient: 'from-primary to-primary-800', icon: Target },
+    { title: `${periodLabel} Sales`, value: String(filteredSales), subtitle: periodLabel, gradient: 'from-amber-500 to-orange-600', icon: TrendingUp },
+    { title: 'Commission', value: formatCurrency(filteredCommission), subtitle: periodLabel, gradient: 'from-primary-800 to-brand-deep', icon: NairaSign },
+    { title: 'Net Earnings', value: formatCurrency(filteredNetEarnings), subtitle: `After tax`, gradient: 'from-slate-800 to-slate-950', icon: Zap },
   ];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return <Badge className="bg-[#22c55e]/10 text-[#22c55e] hover:bg-[#22c55e]/20">Completed</Badge>;
+      case 'COMPLETED': return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Completed</Badge>;
       case 'IN_PROGRESS': return <Badge className="bg-blue-100 text-blue-600 hover:bg-blue-200">In Progress</Badge>;
-      case 'PENDING': return <Badge className="bg-[#fca639]/10 text-[#fca639] hover:bg-[#fca639]/20">Pending</Badge>;
+      case 'PENDING': return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">Pending</Badge>;
       case 'CANCELLED': return <Badge className="bg-red-100 text-red-600 hover:bg-red-200">Cancelled</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;
     }
@@ -206,6 +203,25 @@ export default function RealtorDashboard() {
 
   return (
     <div className="space-y-6">
+      <WelcomeBanner
+        subtitle={myLoyalty?.nextTier
+          ? `${formatCurrency(myLoyalty.valueToNextTier)} more in sales to reach ${tierLabel(myLoyalty.nextTier)}`
+          : 'Here is how your sales are going'}
+        actions={[
+          { label: 'My sales', href: '/dashboard/realtor/sales', icon: TrendingUp },
+          { label: 'Properties', href: '/dashboard/realtor/properties', icon: Home },
+          { label: 'My rank', href: '/dashboard/realtor/loyalty', icon: Award },
+        ]}
+      >
+        <a href="/dashboard/realtor/loyalty" className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 backdrop-blur transition-colors hover:bg-white/15">
+          <TierBadge tier={tier} size={56} animated />
+          <span>
+            <span className="block text-xs uppercase tracking-wider text-white/60">Your rank</span>
+            <span className="block text-lg font-bold">{tierLabel(tier)}</span>
+          </span>
+        </a>
+      </WelcomeBanner>
+
       <AwardBanner />
 
       {/* Realtor of the Month Spotlight Card */}
@@ -437,14 +453,19 @@ export default function RealtorDashboard() {
               {/* Loyalty Progress */}
               <div className="w-full mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between mb-2">
-                  <Badge className={getTierBgClass(tier)}>{tier}</Badge>
+                  <span className="flex items-center gap-2">
+                    <TierBadge tier={tier} size={24} />
+                    <Badge className={getTierBgClass(tier)}>{tier}</Badge>
+                  </span>
                   <span className="text-xs text-muted-foreground">
-                    {currentTierInfo.next ? `Next: ${currentTierInfo.next}` : 'Max Tier'}
+                    {myLoyalty?.nextTier ? `Next: ${tierLabel(myLoyalty.nextTier)}` : 'Top rank'}
                   </span>
                 </div>
                 <Progress value={Math.min(progressToNext, 100)} className="h-2" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {points.toLocaleString()} / {currentTierInfo.max.toLocaleString()} points
+                  {myLoyalty
+                    ? `${formatCurrency(myLoyalty.totalSalesValue)}${myLoyalty.nextTierThreshold ? ` / ${formatCurrency(myLoyalty.nextTierThreshold)}` : ''} in sales`
+                    : '—'}
                 </p>
               </div>
             </CardContent>
@@ -456,7 +477,7 @@ export default function RealtorDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {gradientCards.map((card, index) => (
           <motion.div key={card.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + index * 0.05 }}>
-            <Card className={`bg-gradient-to-br ${card.gradient} text-white overflow-hidden shadow-sm border-0`}>
+            <Card className={`bg-gradient-to-br ${card.gradient} text-white overflow-hidden shadow-lg shadow-black/5 border-0`}>
               <CardContent className="p-5 relative">
                 <div className="absolute top-3 right-3 opacity-20">
                   <card.icon className="w-12 h-12" />

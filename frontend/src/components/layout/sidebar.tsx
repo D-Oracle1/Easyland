@@ -409,7 +409,8 @@ export function Sidebar({
           'transition-all duration-300 ease-in-out',
           role === 'super-admin'
             ? 'border-r border-black/[0.06]'
-            : 'bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800',
+            : // Brand sidebar: the homepage CTA gradient
+              'bg-gradient-to-b from-primary via-primary-800 to-brand-deep text-white shadow-[4px_0_24px_rgba(0,0,0,0.12)]',
           role === 'super-admin' && 'shadow-[2px_0_12px_rgba(0,0,0,0.06)]',
           'hidden md:flex',
           collapsed ? 'md:w-20' : 'md:w-64',
@@ -422,7 +423,7 @@ export function Sidebar({
             'h-16 flex items-center shrink-0 px-4',
             role === 'super-admin'
               ? 'border-b border-black/[0.06]'
-              : 'border-b border-gray-100 dark:border-gray-800',
+              : 'border-b border-white/10',
             collapsed ? 'justify-center' : 'justify-between',
           )}
         >
@@ -449,10 +450,10 @@ export function Sidebar({
               <img
                 src={getImageUrl(branding.logo)}
                 alt={branding.companyName || 'Logo'}
-                className="w-9 h-9 rounded-xl object-contain shrink-0"
+                className="w-9 h-9 rounded-xl object-contain shrink-0 bg-white p-1"
               />
             ) : (
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
             )}
@@ -461,7 +462,7 @@ export function Sidebar({
                 <span
                   className={cn(
                     'text-base font-bold truncate block',
-                    role === 'super-admin' ? 'text-gray-900' : 'text-gray-900 dark:text-white',
+                    role === 'super-admin' ? 'text-gray-900' : 'text-white',
                   )}
                 >
                   {role === 'super-admin'
@@ -482,7 +483,9 @@ export function Sidebar({
             onClick={onClose}
             className={cn(
               'md:hidden p-1.5 rounded-lg transition-colors',
-              'text-gray-400 hover:bg-gray-100 hover:text-gray-600',
+              role === 'super-admin'
+                ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                : 'text-white/60 hover:bg-white/10 hover:text-white',
             )}
           >
             <X className="w-5 h-5" />
@@ -494,7 +497,9 @@ export function Sidebar({
               onClick={() => onCollapsedChange?.(!collapsed)}
               className={cn(
                 'hidden md:flex p-1.5 rounded-lg transition-colors',
-                'text-gray-400 hover:bg-gray-100 hover:text-gray-600',
+                role === 'super-admin'
+                  ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                  : 'text-white/60 hover:bg-white/10 hover:text-white',
               )}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -508,14 +513,14 @@ export function Sidebar({
             'py-4 shrink-0',
             role === 'super-admin'
               ? 'border-b border-black/[0.06]'
-              : 'border-b border-gray-100 dark:border-gray-800',
+              : 'border-b border-white/10',
             collapsed ? 'flex justify-center px-2' : 'px-4 flex items-center gap-3',
           )}
         >
           <TierAvatar tier={myLoyalty?.currentTier} badgeSize={20}>
             <Avatar
               className="w-10 h-10 shrink-0 ring-2"
-              style={{ '--tw-ring-color': role === 'super-admin' ? `${saColor}4d` : undefined } as React.CSSProperties}
+              style={{ '--tw-ring-color': role === 'super-admin' ? `${saColor}4d` : 'rgba(255,255,255,0.3)' } as React.CSSProperties}
             >
               {currentUser?.avatar && (
                 <AvatarImage src={getImageUrl(currentUser.avatar)} alt={userName} />
@@ -533,7 +538,7 @@ export function Sidebar({
               <p
                 className={cn(
                   'text-sm font-semibold truncate',
-                  'text-gray-900 dark:text-white',
+                  role === 'super-admin' ? 'text-gray-900 dark:text-white' : 'text-white',
                 )}
               >
                 {userName}
@@ -541,7 +546,7 @@ export function Sidebar({
               <p
                 className={cn(
                   'text-xs',
-                  'text-gray-500 dark:text-gray-400',
+                  role === 'super-admin' ? 'text-gray-500 dark:text-gray-400' : 'text-white/60',
                 )}
               >
                 {roleLabel}
@@ -568,8 +573,8 @@ export function Sidebar({
                         className={cn(
                           'w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors mb-0.5',
                           hasActiveItem
-                            ? 'text-primary'
-                            : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300',
+                            ? 'text-white'
+                            : 'text-white/45 hover:text-white/80',
                         )}
                       >
                         <span>{section.label}</span>
@@ -596,13 +601,10 @@ export function Sidebar({
                                   'relative flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150',
                                   collapsed ? 'justify-center px-2 py-3' : 'px-3 py-2.5',
                                   active
-                                    ? 'bg-primary/10 text-primary dark:bg-primary/15'
-                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white',
+                                    ? 'bg-white text-primary-800 shadow-md shadow-black/10'
+                                    : 'text-white/75 hover:bg-white/10 hover:text-white',
                                 )}
                               >
-                                {active && !collapsed && (
-                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-primary" />
-                                )}
                                 <item.icon
                                   className={cn(
                                     'w-5 h-5 shrink-0',
@@ -619,7 +621,7 @@ export function Sidebar({
 
                     {/* Thin divider between sections (not after the last) */}
                     {!collapsed && idx < groupedNav.length - 1 && (
-                      <div className="mt-2 mb-1.5 mx-2 h-px bg-gray-100 dark:bg-gray-800" />
+                      <div className="mt-2 mb-1.5 mx-2 h-px bg-white/10" />
                     )}
                   </div>
                 );
@@ -643,14 +645,14 @@ export function Sidebar({
                             ? ''
                             : 'text-gray-500 hover:bg-black/[0.04] hover:text-gray-800'
                           : active
-                            ? 'bg-primary/10 text-primary dark:bg-primary/15'
-                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white',
+                            ? 'bg-white text-primary-800 shadow-md shadow-black/10'
+                            : 'text-white/75 hover:bg-white/10 hover:text-white',
                       )}
                       style={role === 'super-admin' && active
                         ? { backgroundColor: `${saColor}26`, color: saColor }
                         : {}}
                     >
-                      {active && !collapsed && (
+                      {active && !collapsed && role === 'super-admin' && (
                         <span
                           className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
                           style={role === 'super-admin'
@@ -675,7 +677,7 @@ export function Sidebar({
         <div
           className={cn(
             'px-2 py-3 space-y-0.5 shrink-0 border-t',
-            'border-gray-100 dark:border-gray-800',
+            role === 'super-admin' ? 'border-gray-100 dark:border-gray-800' : 'border-white/10',
           )}
         >
           {collapsed && (
@@ -684,7 +686,9 @@ export function Sidebar({
               title="Expand sidebar"
               className={cn(
                 'w-full flex justify-center px-2 py-2.5 rounded-xl transition-colors',
-                'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600',
+                role === 'super-admin'
+                  ? 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
+                  : 'text-white/60 hover:bg-white/10 hover:text-white',
               )}
             >
               <ChevronLeft className="w-5 h-5 rotate-180" />
@@ -696,7 +700,9 @@ export function Sidebar({
             title={collapsed ? 'Settings' : undefined}
             className={cn(
               'flex items-center gap-3 rounded-xl text-sm font-medium transition-all',
-              'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white',
+              role === 'super-admin'
+                ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                : 'text-white/75 hover:bg-white/10 hover:text-white',
               collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5',
             )}
           >
@@ -712,7 +718,9 @@ export function Sidebar({
             title={collapsed ? 'Logout' : undefined}
             className={cn(
               'w-full flex items-center gap-3 rounded-xl text-sm font-medium transition-all',
-              'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20',
+              role === 'super-admin'
+                ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+                : 'text-red-200 hover:bg-red-500/20 hover:text-white',
               collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5',
             )}
           >

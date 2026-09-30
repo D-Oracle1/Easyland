@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -323,15 +324,13 @@ export default function HrDashboardPage() {
       className="space-y-8 pb-10"
     >
       {/* ── 1. HEADER ── */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">HR Control Center</h1>
-          <p className="text-muted-foreground mt-1">Manage people, performance, and operations</p>
-        </div>
-        <Button variant="outline" className="gap-2 self-start sm:self-auto" onClick={fetchData} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+      <motion.div variants={itemVariants}>
+        <WelcomeBanner subtitle="HR control centre — people, performance and operations">
+          <Button variant="ghost" className="gap-2 bg-white/10 text-white hover:bg-white/20 hover:text-white" onClick={fetchData} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </WelcomeBanner>
       </motion.div>
 
       {/* ── 2. LIVE STATS ROW ── */}

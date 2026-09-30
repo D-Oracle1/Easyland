@@ -113,7 +113,7 @@ export default function WelcomeHeader() {
   ];
 
   return (
-    <Card className="border-0 shadow-sm bg-gradient-to-br from-[#16a34a] to-[#22c55e] text-white overflow-hidden">
+    <Card className="border-0 shadow-sm bg-gradient-to-br from-primary via-primary-800 to-brand-deep text-white overflow-hidden">
       <CardContent className="p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-start gap-5">
           {/* Greeting + quick actions */}

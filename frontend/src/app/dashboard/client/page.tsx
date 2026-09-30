@@ -179,7 +179,7 @@ export default function ClientDashboard() {
       {/* Client of the Month */}
       {clientOfMonth && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="bg-gradient-to-br from-[#fca639] to-[#e8953a] text-white shadow-sm border-0">
+          <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-sm border-0">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="w-4 h-4 text-yellow-200" />
@@ -283,8 +283,8 @@ export default function ClientDashboard() {
             <Card className="shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-md bg-[#22c55e]/10 flex items-center justify-center">
-                    <Link className="w-3.5 h-3.5 text-[#22c55e]" />
+                  <div className="w-7 h-7 rounded-md bg-[#15803d]/10 flex items-center justify-center">
+                    <Link className="w-3.5 h-3.5 text-[#15803d]" />
                   </div>
                   <p className="text-sm font-semibold">Your Referral</p>
                 </div>

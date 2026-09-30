@@ -64,7 +64,7 @@ export function DashboardShell({ role, children, extras }: DashboardShellProps) 
 
 
   return (
-    <div className={cn('min-h-screen', isSuperAdmin ? 'neuo-base' : 'bg-gray-50 dark:bg-gray-950')}>
+    <div className={cn('min-h-screen', isSuperAdmin ? 'neuo-base' : 'bg-[#f3f6f2] dark:bg-[#07110b]')}>
       <Sidebar
         role={role}
         isOpen={mobileOpen}

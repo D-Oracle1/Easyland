@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
 import { getUser } from '@/lib/auth-storage';
@@ -207,28 +208,24 @@ export default function GeneralOverseerDashboard() {
   }
 
   const statCards = [
-    { title: 'Total Users', value: stats?.totalUsers ?? 0, icon: Users, gradient: 'from-[#16a34a] to-[#22c55e]' },
-    { title: 'Active Users', value: stats?.activeUsers ?? 0, icon: Shield, gradient: 'from-[#fca639] to-[#fdb95c]' },
-    { title: 'Realtors', value: stats?.realtors ?? 0, icon: Home, gradient: 'from-[#22c55e] to-[#14956e]' },
-    { title: 'Clients', value: stats?.clients ?? 0, icon: Users, gradient: 'from-[#fca639] to-[#e8953a]' },
-    { title: 'Admins', value: stats?.admins ?? 0, icon: UserCog, gradient: 'from-[#16a34a] to-[#22c55e]' },
+    { title: 'Total Users', value: stats?.totalUsers ?? 0, icon: Users, gradient: 'from-primary to-primary-800' },
+    { title: 'Active Users', value: stats?.activeUsers ?? 0, icon: Shield, gradient: 'from-amber-500 to-orange-600' },
+    { title: 'Realtors', value: stats?.realtors ?? 0, icon: Home, gradient: 'from-primary-800 to-brand-deep' },
+    { title: 'Clients', value: stats?.clients ?? 0, icon: Users, gradient: 'from-slate-800 to-slate-950' },
+    { title: 'Admins', value: stats?.admins ?? 0, icon: UserCog, gradient: 'from-primary to-primary-800' },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Welcome Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Welcome back{userName ? `, ${userName}` : ''}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          MD &mdash; Full platform oversight and control
-        </p>
-      </motion.div>
+      {/* Welcome */}
+      <WelcomeBanner
+        subtitle="MD — full platform oversight and control"
+        actions={[
+          { label: 'Analytics', href: '/dashboard/general-overseer/analytics', icon: Shield },
+          { label: 'Realtors', href: '/dashboard/general-overseer/realtors', icon: Home },
+          { label: 'Users', href: '/dashboard/general-overseer/users', icon: Users },
+        ]}
+      />
 
       {/* Stat Cards */}
       <motion.div

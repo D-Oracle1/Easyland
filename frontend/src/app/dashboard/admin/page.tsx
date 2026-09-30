@@ -60,6 +60,8 @@ import { formatCurrency, getTierBgClass } from '@/lib/utils';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { api } from '@/lib/api';
 import { AwardBanner } from '@/components/award-banner';
+import { WelcomeBanner } from '@/components/dashboard/welcome-banner';
+import { StatTile, type StatTone } from '@/components/dashboard/stat-tile';
 import {
   AreaChart,
   Area,
@@ -395,10 +397,10 @@ export default function AdminDashboard() {
   // Get tier distribution from API
   const tierData = dashboardData?.tierDistribution || {};
   const tierDistributionData = useMemo(() => [
-    { name: 'Platinum', value: tierData.PLATINUM || 0, color: '#22c55e' },
-    { name: 'Gold', value: tierData.GOLD || 0, color: '#fca639' },
-    { name: 'Silver', value: tierData.SILVER || 0, color: '#94a3b8' },
-    { name: 'Bronze', value: tierData.BRONZE || 0, color: '#c2956b' },
+    { name: 'Platinum', value: tierData.PLATINUM || 0, color: '#3E7F9A' },
+    { name: 'Gold', value: tierData.GOLD || 0, color: '#F5C518' },
+    { name: 'Silver', value: tierData.SILVER || 0, color: '#9AA3AF' },
+    { name: 'Bronze', value: tierData.BRONZE || 0, color: '#CD7F32' },
   ], [tierData]);
   const totalTiers = useMemo(() => tierDistributionData.reduce((sum, t) => sum + t.value, 0) || 1, [tierDistributionData]);
 
@@ -446,43 +448,43 @@ export default function AdminDashboard() {
       label: 'Total Revenue',
       value: formatCurrency(revenue),
       icon: NairaSign,
-      color: '#22c55e',
+      tone: 'brand' as StatTone,
       subtext: `${salesCount} completed sales`
     },
     {
       label: 'Total Realtors',
       value: String(totalRealtors),
       icon: Users,
-      color: '#22c55e',
+      tone: 'brand' as StatTone,
       subtext: `${activeRealtors} active`
     },
     {
       label: 'Total Clients',
       value: String(totalClients),
       icon: Briefcase,
-      color: '#fca639',
+      tone: 'amber' as StatTone,
       subtext: `${activeClients} active`
     },
     {
       label: 'Total Staff',
       value: String(totalStaff),
       icon: UserCog,
-      color: '#22c55e',
+      tone: 'sky' as StatTone,
       subtext: `${activeStaff} active`
     },
     {
       label: 'Total Properties',
       value: String(totalProperties),
       icon: Home,
-      color: '#fca639',
+      tone: 'amber' as StatTone,
       subtext: `${activeListings} listed`
     },
   ];
 
   const bottomStats = [
     { label: 'Commission Paid', value: formatCurrency(commissionPaid), icon: Wallet, color: '#fca639' },
-    { label: 'Completed Sales', value: String(salesCount), icon: TrendingUp, color: '#22c55e' },
-    { label: 'Active Listings', value: String(activeListings), icon: Building2, color: '#22c55e' },
+    { label: 'Completed Sales', value: String(salesCount), icon: TrendingUp, color: '#15803d' },
+    { label: 'Active Listings', value: String(activeListings), icon: Building2, color: '#15803d' },
     { label: 'Pending Sales', value: String(pendingSales), icon: Clock, color: '#fca639' },
   ];
 
@@ -499,9 +501,9 @@ export default function AdminDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <Badge className="bg-[#22c55e]/10 text-[#22c55e] hover:bg-[#22c55e]/20">Completed</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Completed</Badge>;
       case 'PENDING':
-        return <Badge className="bg-[#fca639]/10 text-[#fca639] hover:bg-[#fca639]/20">Pending</Badge>;
+        return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">Pending</Badge>;
       case 'CANCELLED':
         return <Badge className="bg-red-100 text-red-600 hover:bg-red-200">Cancelled</Badge>;
       default:
@@ -511,36 +513,33 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Award Banner */}
+      {/* 1. Welcome */}
+      <WelcomeBanner
+        subtitle={loading ? 'Loading your business overview…' : `${totalRealtors} realtors · ${activeListings} active listings · ${pendingSales} pending sales`}
+        actions={[
+          { label: 'Sales', href: '/dashboard/admin/sales', icon: TrendingUp },
+          { label: 'Properties', href: '/dashboard/admin/properties', icon: Building2 },
+          { label: 'Realtors', href: '/dashboard/admin/realtors', icon: Users },
+        ]}
+      />
+
+      {/* Award celebrations (only renders when there are current awards) */}
       <AwardBanner />
 
       {/* 2. KPI Stats Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {mainStats.map((stat, index) => (
-          <motion.div
+          <StatTile
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className="shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="text-2xl font-bold mt-1">{loading ? '-' : stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stat.subtext}</p>
-                  </div>
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${stat.color}15` }}
-                  >
-                    <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.label}
+            value={stat.value}
+            hint={stat.subtext}
+            icon={stat.icon}
+            tone={stat.tone}
+            featured={index === 0}
+            loading={loading}
+          />
         ))}
       </div>
 
@@ -550,8 +549,8 @@ export default function AdminDashboard() {
           <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="text-lg">Control Panel</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">Quick access to all modules</p>
+                <CardTitle className="text-lg">Quick access</CardTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">Jump straight to any module</p>
               </div>
             </div>
           </CardHeader>
@@ -568,22 +567,22 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Module cards */}
-                  <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                     {section.modules.map((mod) => (
                       <a
                         key={mod.href}
                         href={mod.href}
-                        className="group relative flex items-center gap-3 rounded-xl border border-border/60 bg-background px-4 py-3.5 transition-all duration-200 hover:border-border hover:shadow-md hover:-translate-y-0.5"
+                        className="group relative flex items-center gap-2.5 rounded-xl bg-muted/50 px-3 py-2.5 transition-all duration-200 hover:bg-primary/10 hover:text-primary"
                       >
                         {/* Icon bubble */}
-                        <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${mod.color}`}>
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${mod.color}`}>
                           <mod.icon className={`w-4.5 h-4.5 ${mod.iconColor}`} style={{ width: '18px', height: '18px' }} />
                         </div>
 
                         {/* Text */}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold leading-tight truncate">{mod.name}</p>
-                          <p className="text-[11px] text-muted-foreground leading-tight mt-0.5 truncate">{mod.description}</p>
+                          
                         </div>
 
                         {/* Arrow on hover */}
@@ -615,12 +614,12 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {/* Staff of the Month */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-5 text-white">
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-800 p-5 text-white">
                 <div className="absolute top-2 right-2 opacity-20"><UserCheck className="w-16 h-16" /></div>
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
                     <Crown className="w-5 h-5 text-yellow-300" />
-                    <span className="text-sm font-medium text-blue-100">Staff of the Month</span>
+                    <span className="text-sm font-medium text-white/80">Staff of the Month</span>
                   </div>
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar className="w-12 h-12 border-2 border-white/30">
@@ -637,12 +636,12 @@ export default function AdminDashboard() {
               </div>
 
               {/* Realtor of the Month */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#16a34a] to-[#22c55e] p-5 text-white">
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary-800 to-brand-deep p-5 text-white">
                 <div className="absolute top-2 right-2 opacity-20"><Award className="w-16 h-16" /></div>
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
                     <Star className="w-5 h-5 text-yellow-300" />
-                    <span className="text-sm font-medium text-green-100">Realtor of the Month</span>
+                    <span className="text-sm font-medium text-white/80">Realtor of the Month</span>
                   </div>
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar className="w-12 h-12 border-2 border-white/30">
@@ -659,7 +658,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Client of the Month */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#fca639] to-[#e8953a] p-5 text-white">
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-5 text-white">
                 <div className="absolute top-2 right-2 opacity-20"><Users className="w-16 h-16" /></div>
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
@@ -681,25 +680,25 @@ export default function AdminDashboard() {
               </div>
 
               {/* Highest Selling Property */}
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 p-5 text-white">
+              <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 p-5 text-white">
                 <div className="absolute top-2 right-2 opacity-20"><Building2 className="w-16 h-16" /></div>
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
-                    <Home className="w-5 h-5 text-purple-200" />
-                    <span className="text-sm font-medium text-purple-100">Top Property Sale</span>
+                    <Home className="w-5 h-5 text-white/60" />
+                    <span className="text-sm font-medium text-white/70">Top Property Sale</span>
                   </div>
                   {highestSellingProperty ? (
                     <>
                       <div className="mb-3">
                         <p className="font-bold text-sm leading-tight">{highestSellingProperty.name}</p>
-                        <p className="text-xs text-purple-100 mt-1">{highestSellingProperty.type} - {highestSellingProperty.location}</p>
+                        <p className="text-xs text-white/70 mt-1">{highestSellingProperty.type} - {highestSellingProperty.location}</p>
                       </div>
                       <div className="space-y-2">
                         <div>
                           <p className="text-2xl font-bold">{formatCurrency(highestSellingProperty.price)}</p>
-                          <p className="text-xs text-purple-100">Sale Price</p>
+                          <p className="text-xs text-white/70">Sale Price</p>
                         </div>
-                        <p className="text-xs"><span className="text-purple-200">Sold by:</span> {highestSellingProperty.soldBy}</p>
+                        <p className="text-xs"><span className="text-white/60">Sold by:</span> {highestSellingProperty.soldBy}</p>
                       </div>
                     </>
                   ) : (
@@ -815,8 +814,8 @@ export default function AdminDashboard() {
                         <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                           <defs>
                             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                              <stop offset="5%" stopColor="#15803d" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#15803d" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="colorSalesCount" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#fca639" stopOpacity={0.3} />
@@ -833,7 +832,7 @@ export default function AdminDashboard() {
                               name === 'revenue' ? 'Revenue' : 'Sales',
                             ]}
                           />
-                          <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#22c55e', stroke: '#fff', strokeWidth: 2 }} />
+                          <Area type="monotone" dataKey="revenue" stroke="#15803d" strokeWidth={2.5} fill="url(#colorRevenue)" dot={{ r: 4, fill: '#15803d', stroke: '#fff', strokeWidth: 2 }} />
                           <Area type="monotone" dataKey="sales" stroke="#fca639" strokeWidth={2.5} fill="url(#colorSalesCount)" dot={{ r: 4, fill: '#fca639', stroke: '#fff', strokeWidth: 2 }} />
                         </AreaChart>
                       </ResponsiveContainer>
