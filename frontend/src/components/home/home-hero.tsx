@@ -92,7 +92,7 @@ export function HomeHero({
   ];
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#07170f] pb-32 pt-28 md:pb-40 md:pt-32">
+    <section className="relative isolate overflow-hidden bg-[#07170f] pb-24 pt-28 md:pb-28 md:pt-32">
       {/* Ambient light */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-32 top-10 h-[420px] w-[420px] rounded-full bg-emerald-500/25 blur-[120px]" />
