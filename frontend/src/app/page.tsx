@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -30,6 +29,9 @@ import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { LandCard, HomeCard } from '@/components/home/listing-cards';
+import { HomeHero } from '@/components/home/home-hero';
+import { CategoryCards } from '@/components/home/category-cards';
+import { PlatformShowcase } from '@/components/home/platform-showcase';
 import { api, getImageUrl } from '@/lib/api';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
 import {
@@ -60,21 +62,9 @@ const EMPTY_LISTINGS: CategoryListings = {
   commercial: { items: [], total: 0 },
 };
 
-const PLACEHOLDER_HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=80',
-  'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=1400&q=80',
-  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1400&q=80',
-];
-
 const ICON_MAP: Record<string, any> = {
   Users, Building2, TrendingUp, Award, BarChart3, MessageSquare, Shield, Zap, Star, Search,
 };
-
-const SEARCH_TABS: { value: '' | PropertyCategory; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'land', label: 'Land' },
-  { value: 'homes', label: 'Apartments' },
-];
 
 // ── Lightweight sessionStorage cache (stale-while-revalidate) ──────────────
 function scRead<T>(key: string, ttlMs: number): T | null {
@@ -124,10 +114,6 @@ function CardSkeletons() {
 }
 
 export default function HomePage() {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchCategory, setSearchCategory] = useState<'' | PropertyCategory>('');
-
   const cachedListings = scRead<CategoryListings>('__hp_cats__', 30_000);
   const cachedCms = scRead<Record<string, any>>('__hp_cms__', 300_000);
   const cachedEvts = scRead<any>('__hp_evts__', 120_000);
@@ -191,51 +177,12 @@ export default function HomePage() {
   const cta = cms?.cta || {};
   const contact = cms?.contact || {};
 
-  const heroTitle = hero.title || 'Find Your Perfect Property';
-  const heroTitleAccent = hero.titleAccent || `with ${companyName}`;
-  const heroSubtitle = hero.subtitle || 'Discover premium land and apartments, connect with top realtors, and make your real estate dreams a reality.';
-
-  // Hero image carousel: side images first, then background images, then placeholders
-  const rawHeroImages: string[] = [
-    ...(Array.isArray(hero.heroImages) ? hero.heroImages : hero.heroImage ? [hero.heroImage] : []),
-    ...(Array.isArray(hero.backgroundImages) ? hero.backgroundImages : hero.backgroundImage ? [hero.backgroundImage] : []),
-  ].filter(Boolean);
-  const heroImages = rawHeroImages.length > 0 ? rawHeroImages.map(abs) : PLACEHOLDER_HERO_IMAGES;
-
-  const [slide, setSlide] = useState(0);
-  const slideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startSlides = useCallback(() => {
-    if (heroImages.length <= 1) return;
-    slideTimer.current = setInterval(() => setSlide((i) => (i + 1) % heroImages.length), 5000);
-  }, [heroImages.length]);
-  useEffect(() => {
-    startSlides();
-    return () => { if (slideTimer.current) clearInterval(slideTimer.current); };
-  }, [startSlides]);
-  const goToSlide = (i: number) => {
-    setSlide(i);
-    if (slideTimer.current) clearInterval(slideTimer.current);
-    startSlides();
-  };
-
   const displayEvents = events
     ? (events.featured.length > 0 ? events.featured : events.upcoming.slice(0, 3))
     : [];
 
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (searchQuery.trim()) params.set('search', searchQuery.trim());
-    if (searchCategory) params.set('type', CATEGORY_TYPES[searchCategory].join(','));
-    router.push(`/properties${params.toString() ? `?${params}` : ''}`);
-  };
-
-  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-
-  const categoryTiles = ([
-    { key: 'land', icon: LandPlot, blurb: 'Estates, plots and acreage ready to build on', tint: 'from-amber-950/95', anchor: 'land' },
-    { key: 'homes', icon: Home, blurb: 'Apartments, terraces, duplexes and villas', tint: 'from-green-950/95', anchor: 'apartments' },
-    { key: 'commercial', icon: Building2, blurb: 'Offices, shops and mixed-use spaces', tint: 'from-slate-950/95', anchor: 'commercial' },
-  ] as const).filter((t) => t.key !== 'commercial' || listings.commercial.total > 0);
+  // Skip blank CMS entries (no name)
+  const realtors = (agents.agents || []).filter((a: any) => (a?.name || '').trim());
 
   const nothingListed = !loading && listings.land.total + listings.homes.total + listings.commercial.total === 0;
 
@@ -244,172 +191,9 @@ export default function HomePage() {
       <PublicNavbar currentPage="/" />
       <MobileBottomNav />
 
-      {/* ── HERO ── split: copy + search on the left, image showcase on the right */}
-      <section className="relative overflow-hidden bg-[#0d2b1c] pb-28 pt-28 md:pb-36 md:pt-32">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: 'radial-gradient(circle, #86efac 1px, transparent 1px)', backgroundSize: '26px 26px' }}
-        />
-        <div aria-hidden className="absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-green-600/20 blur-3xl" />
+      <HomeHero hero={hero} companyName={companyName} listings={listings} loading={loading} headlineStat={stats.stats?.[0]} />
 
-        <div className="container relative mx-auto grid items-center gap-12 px-4 lg:grid-cols-2">
-          <div>
-            {hero.badgeText && (
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-green-400/30 bg-green-400/10 px-4 py-1.5 text-xs font-semibold text-green-200">
-                <Users className="h-3.5 w-3.5" /> {hero.badgeText}
-              </div>
-            )}
-            <h1 className="text-4xl font-extrabold leading-[1.1] text-white md:text-5xl lg:text-6xl">
-              {heroTitle}{' '}
-              <span className="bg-gradient-to-r from-green-300 to-amber-200 bg-clip-text text-transparent">{heroTitleAccent}</span>
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70">{heroSubtitle}</p>
-
-            {/* Search */}
-            <div className="mt-8 max-w-xl rounded-2xl bg-white p-2 shadow-2xl dark:bg-gray-900">
-              <div className="flex gap-1 p-1" role="tablist" aria-label="Property category">
-                {SEARCH_TABS.map((t) => (
-                  <button
-                    key={t.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={searchCategory === t.value}
-                    onClick={() => setSearchCategory(t.value)}
-                    className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                      searchCategory === t.value
-                        ? 'bg-green-700 text-white'
-                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-1 flex flex-col gap-2 sm:flex-row">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800">
-                  <MapPin className="h-4 w-4 shrink-0 text-green-600" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder="City, area or estate name…"
-                    aria-label="Search location"
-                    className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400 dark:text-gray-200"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSearch}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-600"
-                >
-                  <Search className="h-4 w-4" /> Search
-                </button>
-              </div>
-            </div>
-
-            {hero.stats && hero.stats.length > 0 && (
-              <div className="mt-8 flex flex-wrap gap-8">
-                {hero.stats.map((stat: any, i: number) => (
-                  <div key={i}>
-                    <div className="text-2xl font-bold text-white">{stat.value}</div>
-                    <div className="mt-0.5 text-xs text-white/50">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Image showcase */}
-          <div className="relative mx-auto w-full max-w-xl">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl ring-1 ring-white/10 sm:aspect-[5/5]">
-              {heroImages.map((src, i) => (
-                <div key={src + i} className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: i === slide ? 1 : 0 }}>
-                  <Image src={src} alt={`${companyName} property ${i + 1}`} fill sizes="(min-width:1024px) 45vw, 100vw" className="object-cover" priority={i === 0} />
-                </div>
-              ))}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              {heroImages.length > 1 && (
-                <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
-                  {heroImages.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => goToSlide(i)}
-                      aria-label={`Show image ${i + 1}`}
-                      className={`h-2 rounded-full transition-all ${i === slide ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Floating category chips */}
-            {!loading && listings.land.total > 0 && (
-              <button
-                type="button"
-                onClick={() => scrollTo('land')}
-                className="absolute -left-3 top-10 flex items-center gap-3 rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl backdrop-blur transition-transform hover:-translate-y-0.5 sm:-left-8"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100"><LandPlot className="h-5 w-5 text-amber-600" /></span>
-                <span>
-                  <span className="block text-lg font-bold leading-none text-gray-900">{listings.land.total}</span>
-                  <span className="text-xs text-gray-500">Land listings</span>
-                </span>
-              </button>
-            )}
-            {!loading && listings.homes.total > 0 && (
-              <button
-                type="button"
-                onClick={() => scrollTo('apartments')}
-                className="absolute -right-3 bottom-16 flex items-center gap-3 rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl backdrop-blur transition-transform hover:-translate-y-0.5 sm:-right-8"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100"><Home className="h-5 w-5 text-green-700" /></span>
-                <span>
-                  <span className="block text-lg font-bold leading-none text-gray-900">{listings.homes.total}</span>
-                  <span className="text-xs text-gray-500">Apartments & homes</span>
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CATEGORY TILES ── overlap the hero */}
-      <section className="relative z-10 -mt-16 px-4 md:-mt-20">
-        <div className={`container mx-auto grid gap-4 ${categoryTiles.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-          {categoryTiles.map((tile) => {
-            const data = listings[tile.key];
-            const cover = data.items.find((p: any) => p.images?.length)?.images?.[0];
-            const Icon = tile.icon;
-            return (
-              <button
-                key={tile.key}
-                type="button"
-                onClick={() => scrollTo(tile.anchor)}
-                className="group relative h-44 overflow-hidden rounded-2xl text-left shadow-xl md:h-52"
-              >
-                {cover ? (
-                  <Image src={abs(cover)} alt="" fill sizes="(min-width:768px) 50vw, 100vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-700 to-green-900" />
-                )}
-                {/* Listing covers are text-heavy flyers: darken enough for the label to read */}
-                <div className="absolute inset-0 bg-black/45" />
-                <div className={`absolute inset-0 bg-gradient-to-t ${tile.tint} via-black/40 to-transparent`} />
-                <div className="relative flex h-full flex-col justify-end p-6 text-white">
-                  <Icon className="mb-3 h-7 w-7 text-white/90" />
-                  <h3 className="text-xl font-bold drop-shadow">{CATEGORY_LABELS[tile.key]}</h3>
-                  <p className="mt-1 max-w-xs text-sm text-white/75">{tile.blurb}</p>
-                  <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
-                    {loading ? 'Loading…' : `${data.total} available`}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      <CategoryCards listings={listings} loading={loading} />
 
       {/* ── LAND & PLOTS ── */}
       <section id="land" className="scroll-mt-24 px-4 py-20">
@@ -574,7 +358,7 @@ export default function HomePage() {
       {/* ── STATS ── */}
       {stats.stats && stats.stats.length > 0 && (
         <section className="bg-[#0d2b1c] px-4 py-14">
-          <div className="container mx-auto grid grid-cols-2 gap-8 text-center md:grid-cols-4">
+          <div className="container mx-auto flex flex-wrap justify-center gap-x-20 gap-y-10 text-center">
             {stats.stats.map((stat: any, i: number) => {
               const StatIcon = ICON_MAP[stat.icon] || [Building2, TrendingUp, Users, Star][i % 4];
               return (
@@ -640,18 +424,21 @@ export default function HomePage() {
       )}
 
       {/* ── AGENTS ── */}
-      {agents.agents && agents.agents.length > 0 && (
+      {realtors.length > 0 && (
         <section className="bg-[#f1f7ec] px-4 py-20 dark:bg-gray-900">
           <div className="container mx-auto">
             <SectionHeading eyebrow="Our Team" title="Meet Our Top Realtors" />
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {agents.agents.map((agent: any, i: number) => {
+            <div className="flex flex-wrap justify-center gap-6">
+              {realtors.map((agent: any, i: number) => {
                 const raw = agent.photo || agent.image || agent.avatar || '';
                 const photo = raw ? abs(raw) : '';
                 return (
-                  <div key={i} className="rounded-2xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-lg dark:bg-gray-950">
+                  <div key={i} className="w-full rounded-2xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-lg dark:bg-gray-950 sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]">
                     {photo ? (
-                      <Image src={photo} alt={agent.name} width={88} height={88} className="mx-auto h-[88px] w-[88px] rounded-full object-cover ring-4 ring-green-100" />
+                      // Fixed square frame + fill/object-cover: any photo shape is cropped, never stretched
+                      <div className="relative mx-auto h-[88px] w-[88px] overflow-hidden rounded-full ring-4 ring-green-100">
+                        <Image src={photo} alt={agent.name} fill sizes="88px" className="object-cover object-top" />
+                      </div>
                     ) : (
                       <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-full bg-green-100 text-2xl font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-200">
                         {(agent.name || '?').trim().charAt(0).toUpperCase()}
@@ -665,7 +452,7 @@ export default function HomePage() {
                           <Star key={j} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                         ))}
                       </span>
-                      {agent.deals !== undefined && <span className="text-xs text-gray-500">{agent.deals} deals</span>}
+                      {String(agent.deals ?? '').trim() && <span className="text-xs text-gray-500">{agent.deals} deals</span>}
                     </div>
                   </div>
                 );
@@ -675,32 +462,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── PLATFORM FEATURES ── */}
-      {platformFeatures.features && platformFeatures.features.length > 0 && (
-        <section className="px-4 py-20">
-          <div className="container mx-auto">
-            <div className="mx-auto mb-12 max-w-2xl text-center">
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-green-700">Platform</span>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white md:text-4xl">Everything You Need to Succeed</h2>
-              <p className="mt-2 text-sm text-gray-500">Comprehensive tools for managing your real estate business</p>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {platformFeatures.features.map((feature: any, i: number) => {
-                const FeatureIcon = ICON_MAP[feature.icon] || Zap;
-                return (
-                  <div key={i} className="rounded-2xl border border-gray-100 p-6 transition-colors hover:border-green-200 hover:bg-green-50/50 dark:border-gray-800 dark:hover:bg-gray-900">
-                    <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
-                      <FeatureIcon className="h-5 w-5 text-green-700" />
-                    </span>
-                    <h3 className="mb-1.5 text-sm font-semibold text-gray-900 dark:text-white">{feature.title}</h3>
-                    <p className="text-xs leading-relaxed text-gray-500">{feature.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* ── PLATFORM ── */}
+      <PlatformShowcase cmsFeatures={platformFeatures.features || []} companyName={companyName} />
 
       {/* ── CTA ── */}
       <section className="px-4 pb-20">
