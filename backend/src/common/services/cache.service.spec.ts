@@ -8,6 +8,7 @@ const mockRedis = {
   setex: jest.fn(),
   del: jest.fn(),
   keys: jest.fn(),
+  scan: jest.fn(),
   on: jest.fn(),
   disconnect: jest.fn(),
 };
@@ -96,11 +97,12 @@ describe('CacheService', () => {
 
   describe('invalidate', () => {
     it('should delete all keys matching namespace pattern', async () => {
-      mockRedis.keys.mockResolvedValue(['ns:key1', 'ns:key2', 'ns:key3']);
+      // invalidate() uses SCAN (non-blocking) rather than KEYS
+      mockRedis.scan.mockResolvedValueOnce(['0', ['ns:key1', 'ns:key2', 'ns:key3']]);
 
       await service.invalidate('ns');
 
-      expect(mockRedis.keys).toHaveBeenCalledWith('ns:*');
+      expect(mockRedis.scan).toHaveBeenCalledWith('0', 'MATCH', 'ns:*', 'COUNT', 100);
       expect(mockRedis.del).toHaveBeenCalledWith('ns:key1', 'ns:key2', 'ns:key3');
     });
 

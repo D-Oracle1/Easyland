@@ -8,6 +8,7 @@ import { RegistrationService } from './registration.service';
 import { QrService } from './qr.service';
 import { EventAnalyticsService } from './analytics.service';
 import { PrismaService } from '../../database/prisma.service';
+import { MailService } from '../../common/services/mail.service';
 import { EventStatus, RegistrationStatus } from '@prisma/client';
 
 const mockPrisma = {
@@ -55,6 +56,7 @@ describe('RegistrationService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: QrService, useValue: mockQrService },
         { provide: EventAnalyticsService, useValue: mockAnalytics },
+        { provide: MailService, useValue: { sendEventRegistrationEmail: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
     service = module.get<RegistrationService>(RegistrationService);
@@ -143,11 +145,10 @@ describe('RegistrationService', () => {
   // ── checkIn ───────────────────────────────────────────────────────────────
 
   describe('checkIn', () => {
-    it('should reject invalid QR token', async () => {
-      mockQrService.verifyToken.mockImplementation(() => {
-        throw new BadRequestException('Invalid or tampered QR code');
-      });
-      await expect(service.checkIn({ qrToken: 'bad-token' })).rejects.toThrow(BadRequestException);
+    it('should reject an unknown QR token', async () => {
+      // Check-in looks tokens up in the DB (the source of truth); unknown = not found
+      mockPrisma.eventRegistration.findUnique.mockResolvedValueOnce(null);
+      await expect(service.checkIn({ qrToken: 'bad-token' })).rejects.toThrow(NotFoundException);
     });
 
     it('should reject token not found in DB', async () => {

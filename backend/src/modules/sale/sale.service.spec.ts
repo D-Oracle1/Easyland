@@ -6,6 +6,8 @@ import { TaxService } from '../tax/tax.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
 import { NotificationService } from '../notification/notification.service';
 import { ClientService } from '../client/client.service';
+import { SettingsService } from '../settings/settings.service';
+import { LedgerService } from '../accounting/ledger.service';
 
 describe('SaleService', () => {
   let service: SaleService;
@@ -67,6 +69,8 @@ describe('SaleService', () => {
         { provide: LoyaltyService, useValue: mockLoyaltyService },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: ClientService, useValue: mockClientService },
+        { provide: SettingsService, useValue: { getFlatCommissionRate: jest.fn().mockResolvedValue(0.12), getMainTaxRate: jest.fn().mockResolvedValue(0) } },
+        { provide: LedgerService, useValue: {} },
       ],
     }).compile();
 
