@@ -187,8 +187,12 @@ const groupedNavigationConfig: Record<string, NavSection[]> = {
         { name: 'Departments', href: '/dashboard/admin/departments', icon: Building, moduleKey: 'departments' },
       ],
     },
-    // "Operations → Branches" is hidden until the branch system backend
-    // (branch-unreleased) and its DB migration are shipped.
+    {
+      label: 'Operations',
+      items: [
+        { name: 'Branches', href: '/dashboard/admin/branches', icon: Building },
+      ],
+    },
     {
       label: 'Sales & Finance',
       items: [
