@@ -80,6 +80,74 @@ export default function LoginPage() {
     password: '',
     rememberMe: false,
   });
+  // 2FA step: set when /auth/login answers { requires2FA, challengeToken }
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [twoFaCode, setTwoFaCode] = useState('');
+  const [useRecovery, setUseRecovery] = useState(false);
+
+  const finishLogin = (payload: any) => {
+    // Clear any stale auth data first
+    clearAuth();
+
+    // Store token and user data
+    const token = payload?.accessToken;
+    const user = payload?.user;
+    setAuth(token, user);
+
+    const role = user?.role?.toLowerCase();
+
+    toast.success('Login successful!');
+
+    // Route based on role
+    if (user?.isSuperAdmin || role === 'super_admin') {
+      router.push('/dashboard/super-admin');
+    } else if (role === 'general_overseer') {
+      router.push('/dashboard/general-overseer');
+    } else if (role === 'admin') {
+      router.push('/dashboard/admin');
+    } else if (role === 'branch_manager') {
+      router.push('/dashboard/branch-manager');
+    } else if (role === 'realtor') {
+      router.push('/dashboard/realtor');
+    } else if (role === 'hr') {
+      router.push('/dashboard/hr');
+    } else if (role === 'staff') {
+      router.push('/dashboard/staff');
+    } else {
+      router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard/client');
+    }
+  };
+
+  const handleTwoFa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challenge) return;
+    setIsLoading(true);
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const tid = (await import('@/lib/api')).getTenantId();
+      if (tid) headers['X-Company-ID'] = tid;
+      const response = await fetch(apiUrl('/auth/2fa/login'), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(
+          useRecovery
+            ? { challengeToken: challenge, recoveryCode: twoFaCode.trim() }
+            : { challengeToken: challenge, code: twoFaCode.trim() },
+        ),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg = Array.isArray(data?.message) ? data.message.join(', ') : data?.message;
+        if (/expired|session/i.test(msg || '')) setChallenge(null);
+        throw new Error(msg || 'Invalid authentication code');
+      }
+      finishLogin(data.data ?? data);
+    } catch (error: any) {
+      toast.error(error.message || 'Invalid authentication code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,37 +173,17 @@ export default function LoginPage() {
       }
 
       const data = await response.json();
+      const payload = data.data ?? data;
 
-      // Clear any stale auth data first
-      clearAuth();
-
-      // Store token and user data
-      const token = data.data?.accessToken || data.accessToken;
-      const user = data.data?.user || data.user;
-      setAuth(token, user);
-
-      const role = user?.role?.toLowerCase();
-
-      toast.success('Login successful!');
-
-      // Route based on role
-      if (user?.isSuperAdmin || role === 'super_admin') {
-        router.push('/dashboard/super-admin');
-      } else if (role === 'general_overseer') {
-        router.push('/dashboard/general-overseer');
-      } else if (role === 'admin') {
-        router.push('/dashboard/admin');
-      } else if (role === 'branch_manager') {
-        router.push('/dashboard/branch-manager');
-      } else if (role === 'realtor') {
-        router.push('/dashboard/realtor');
-      } else if (role === 'hr') {
-        router.push('/dashboard/hr');
-      } else if (role === 'staff') {
-        router.push('/dashboard/staff');
-      } else {
-        router.push(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/dashboard/client');
+      // Password OK but the account has 2FA: ask for the authenticator code
+      if (payload?.requires2FA) {
+        setChallenge(payload.challengeToken);
+        setTwoFaCode('');
+        setUseRecovery(false);
+        return;
       }
+
+      finishLogin(payload);
     } catch (error: any) {
       const msg: string = error.message || '';
       if (msg === 'EMAIL_NOT_VERIFIED' || msg.toLowerCase().includes('verify your email')) {
@@ -204,6 +252,38 @@ export default function LoginPage() {
           <CardDescription>Sign in to your {companyName} account</CardDescription>
         </CardHeader>
         <CardContent>
+          {challenge ? (
+            <form onSubmit={handleTwoFa} className="space-y-4">
+              <div className="space-y-1 text-center">
+                <p className="font-medium">Two-factor authentication</p>
+                <p className="text-sm text-muted-foreground">
+                  {useRecovery ? 'Enter one of your backup codes.' : 'Enter the 6-digit code from your authenticator app.'}
+                </p>
+              </div>
+              <Input
+                autoFocus
+                inputMode={useRecovery ? 'text' : 'numeric'}
+                autoComplete="one-time-code"
+                maxLength={useRecovery ? 12 : 6}
+                placeholder={useRecovery ? 'Backup code' : '123456'}
+                value={twoFaCode}
+                onChange={(e) => setTwoFaCode(useRecovery ? e.target.value : e.target.value.replace(/\D/g, ''))}
+                className="text-center font-mono text-lg tracking-[0.4em]"
+              />
+              <Button type="submit" className="w-full" disabled={isLoading || (!useRecovery && twoFaCode.length !== 6) || (useRecovery && twoFaCode.trim().length < 8)}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Verify and sign in
+              </Button>
+              <div className="flex justify-between text-sm">
+                <button type="button" className="text-primary hover:underline" onClick={() => { setUseRecovery(!useRecovery); setTwoFaCode(''); }}>
+                  {useRecovery ? 'Use authenticator code' : 'Use a backup code'}
+                </button>
+                <button type="button" className="text-muted-foreground hover:underline" onClick={() => setChallenge(null)}>
+                  Back
+                </button>
+              </div>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
@@ -253,6 +333,7 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
+          )}
           <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Don&apos;t have an account?{' '}
             <Link

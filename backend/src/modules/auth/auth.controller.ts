@@ -25,7 +25,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { EnableTwoFaDto, VerifyTwoFaDto, DisableTwoFaDto, RecoveryCodeDto } from './dto/twofa.dto';
+import { EnableTwoFaDto, VerifyTwoFaDto, DisableTwoFaDto, TwoFaLoginDto } from './dto/twofa.dto';
 import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -68,7 +68,8 @@ export class AuthController {
   ) {
     const companyId = req.tenant?.companyId || null;
     const result = await this.authService.login(loginDto, companyId);
-    setAuthCookies(res, result, REFRESH_EXPIRES_IN);
+    // 2FA users get a challenge, not a session — no cookies yet
+    if (!("requires2FA" in result)) setAuthCookies(res, result, REFRESH_EXPIRES_IN);
     return result;
   }
 
@@ -273,30 +274,29 @@ export class AuthController {
     return this.twoFaService.disable(userId, dto.code);
   }
 
-  @Post('2fa/verify')
+  // Replaces the old userId-based /2fa/verify and /2fa/recovery endpoints,
+  // which needed no login and could consume another user's recovery codes.
+  @Post('2fa/login')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify TOTP code during login flow' })
-  async verifyTwoFa(
-    @Body('userId') userId: string,
-    @Body() dto: VerifyTwoFaDto,
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: 'Complete a 2FA login with a TOTP code or recovery code' })
+  async twoFaLogin(
+    @Body() dto: TwoFaLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    const valid = await this.twoFaService.verifyForLogin(userId, dto.code);
-    if (!valid) throw new HttpException('Invalid 2FA code', HttpStatus.UNAUTHORIZED);
-    return { verified: true };
-  }
-
-  @Post('2fa/recovery')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Use a one-time recovery code in place of TOTP (consumes the code)' })
-  async useTwoFaRecovery(
-    @Body('userId') userId: string,
-    @Body() dto: RecoveryCodeDto,
-  ) {
-    const valid = await this.twoFaService.verifyRecoveryCode(userId, dto.recoveryCode);
-    if (!valid) throw new HttpException('Invalid recovery code', HttpStatus.UNAUTHORIZED);
-    return { verified: true };
+    if (!dto.code && !dto.recoveryCode) {
+      throw new HttpException('Enter your authentication code', HttpStatus.BAD_REQUEST);
+    }
+    const result = await this.authService.completeTwoFactorLogin(
+      dto.challengeToken,
+      dto.code,
+      dto.recoveryCode,
+      req.tenant?.companyId || null,
+    );
+    setAuthCookies(res, result, REFRESH_EXPIRES_IN);
+    return result;
   }
 
   @Post('2fa/regenerate-backup-codes')

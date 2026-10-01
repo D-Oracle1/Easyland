@@ -8,6 +8,7 @@ import { MasterPrismaService } from '../../database/master-prisma.service';
 import { TenantPrismaService } from '../../database/tenant-prisma.service';
 import { CompanyService } from '../company/company.service';
 import { MailService } from '../../common/services/mail.service';
+import { TwoFaService } from './twofa.service';
 import * as bcrypt from 'bcryptjs';
 
 describe('AuthService', () => {
@@ -37,6 +38,12 @@ describe('AuthService', () => {
   const mockUsersService = {
     findByEmail: jest.fn(),
     create: jest.fn(),
+  };
+
+  const mockTwoFaService = {
+    isEnabled: jest.fn().mockResolvedValue(false),
+    verifyForLogin: jest.fn(),
+    verifyRecoveryCode: jest.fn(),
   };
 
   const mockJwtService = {
@@ -87,6 +94,7 @@ describe('AuthService', () => {
         { provide: TenantPrismaService, useValue: mockTenantPrisma },
         { provide: CompanyService, useValue: mockCompanyService },
         { provide: MailService, useValue: mockMailService },
+        { provide: TwoFaService, useValue: mockTwoFaService },
       ],
     }).compile();
 
@@ -146,6 +154,36 @@ describe('AuthService', () => {
       const result = await service.validateUser('test@example.com', 'wrongpassword');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('completeTwoFactorLogin', () => {
+    it('rejects an expired or forged challenge', async () => {
+      mockJwtService.verify.mockImplementationOnce(() => { throw new Error('jwt expired'); });
+      await expect(service.completeTwoFactorLogin('bad', '123456')).rejects.toThrow('expired');
+    });
+
+    it('rejects a token that is not a 2FA challenge (e.g. an access token)', async () => {
+      mockJwtService.verify.mockReturnValueOnce({ sub: 'u1' });
+      await expect(service.completeTwoFactorLogin('access-token', '123456')).rejects.toThrow('Invalid sign-in session');
+    });
+
+    it('rejects a wrong authenticator code', async () => {
+      mockJwtService.verify.mockReturnValueOnce({ sub: 'u1', purpose: '2fa-login' });
+      mockTwoFaService.isEnabled.mockResolvedValueOnce(true);
+      mockTwoFaService.verifyForLogin.mockResolvedValueOnce(false);
+      await expect(service.completeTwoFactorLogin('challenge', '000000')).rejects.toThrow('Invalid authentication code');
+    });
+
+    it('issues a session for a valid code', async () => {
+      mockJwtService.verify.mockReturnValueOnce({ sub: 'u1', purpose: '2fa-login' });
+      mockTwoFaService.isEnabled.mockResolvedValueOnce(true);
+      mockTwoFaService.verifyForLogin.mockResolvedValueOnce(true);
+      mockPrisma.user.findUnique.mockResolvedValueOnce({ id: 'u1', email: 'a@b.c', role: 'ADMIN', status: 'ACTIVE', password: 'hash' });
+      mockPrisma.refreshToken.create.mockResolvedValueOnce({});
+      const res: any = await service.completeTwoFactorLogin('challenge', '123456');
+      expect(res.accessToken).toBe('mock-token');
+      expect(res.user.password).toBeUndefined();
     });
   });
 

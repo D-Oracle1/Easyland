@@ -25,6 +25,7 @@ import { api, getImageUrl } from '@/lib/api';
 import { getUser, getToken, updateUser } from '@/lib/auth-storage';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { SecuritySettings } from '@/components/security-settings';
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -391,36 +392,7 @@ export default function GeneralOverseerSettingsPage() {
                 <CardDescription>Manage your account security</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Current Password</label>
-                    <Input type="password" placeholder="Enter current password" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">New Password</label>
-                    <Input type="password" placeholder="Enter new password" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Confirm New Password</label>
-                    <Input type="password" placeholder="Confirm new password" />
-                  </div>
-                </div>
-
-                <Button>
-                  <Shield className="w-4 h-4 mr-2" />
-                  Update Password
-                </Button>
-
-                <div className="border-t pt-6">
-                  <h3 className="font-semibold mb-4">Two-Factor Authentication</h3>
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                    <div>
-                      <p className="font-medium">Enable 2FA</p>
-                      <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                    </div>
-                    <Button variant="outline">Enable</Button>
-                  </div>
-                </div>
+                <SecuritySettings />
               </CardContent>
             </Card>
           )}

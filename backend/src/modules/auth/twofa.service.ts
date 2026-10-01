@@ -17,7 +17,7 @@ import * as crypto from 'crypto';
  * been migrated yet). All reads/writes use raw SQL via $queryRaw / $executeRaw.
  *
  * Migration SQL (run once per tenant DB):
- *   ALTER TABLE "User"
+ *   ALTER TABLE users
  *     ADD COLUMN IF NOT EXISTS "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false,
  *     ADD COLUMN IF NOT EXISTS "twoFactorSecret" TEXT,
  *     ADD COLUMN IF NOT EXISTS "twoFactorRecoveryCodes" JSONB NOT NULL DEFAULT '[]';
@@ -41,7 +41,7 @@ export class TwoFaService {
     try {
       const rows = await this.prisma.$queryRaw<any[]>`
         SELECT "email", "twoFactorEnabled", "twoFactorSecret", "twoFactorRecoveryCodes"
-        FROM "User"
+        FROM users
         WHERE "id" = ${userId}
         LIMIT 1
       `;
@@ -90,7 +90,9 @@ export class TwoFaService {
 
     if (!sets.length) return;
 
-    const sql = `UPDATE "User" SET ${sets.join(', ')} WHERE "id" = $${sets.length + 1}`;
+    // Table is "users" (Prisma @@map) — it was previously queried as "User", which
+    // does not exist, so 2FA silently never worked.
+    const sql = `UPDATE users SET ${sets.join(', ')} WHERE "id" = $${sets.length + 1}`;
     values.push(userId);
 
     try {
@@ -127,7 +129,7 @@ export class TwoFaService {
       twoFactorRecoveryCodes: backupCodes,
     });
 
-    const appName = 'RMS Platform';
+    const appName = process.env.TWO_FA_ISSUER || 'Easyland';
     const qrCodeUrl = `otpauth://totp/${encodeURIComponent(appName)}:${encodeURIComponent(user.email)}?secret=${secret}&issuer=${encodeURIComponent(appName)}&algorithm=SHA1&digits=6&period=30`;
 
     return { secret, qrCodeUrl, backupCodes };
@@ -169,6 +171,12 @@ export class TwoFaService {
   // ─────────────────────────────────────────────
   // Verify during login
   // ─────────────────────────────────────────────
+
+  /** Whether this user must pass a 2FA challenge at login. */
+  async isEnabled(userId: string): Promise<boolean> {
+    const user = await this.read2fa(userId);
+    return !!user?.twoFactorEnabled;
+  }
 
   async verifyForLogin(userId: string, code: string): Promise<boolean> {
     const user = await this.read2fa(userId).catch(() => null);

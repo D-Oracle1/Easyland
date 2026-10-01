@@ -20,6 +20,7 @@ import { LoginDto } from './dto/login.dto';
 import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { UserRole, UserStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
+import { TwoFaService } from './twofa.service';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
     private readonly tenantPrisma: TenantPrismaService,
     private readonly companyService: CompanyService,
     private readonly mailService: MailService,
+    private readonly twoFaService: TwoFaService,
   ) {}
 
   /**
@@ -315,6 +317,16 @@ export class AuthService {
       }
     }
 
+    // 2FA: password alone is not enough — hand back a short-lived challenge
+    // instead of tokens; the session is issued by completeTwoFactorLogin().
+    if (await this.twoFaService.isEnabled(user.id)) {
+      const challengeToken = this.jwtService.sign(
+        { sub: user.id, companyId: companyId || undefined, purpose: '2fa-login' },
+        { expiresIn: '5m' },
+      );
+      return { requires2FA: true as const, challengeToken };
+    }
+
     const tokens = await this.generateTokens(user, companyId);
 
     const { password, ...userWithoutPassword } = user;
@@ -323,6 +335,43 @@ export class AuthService {
       user: { ...userWithoutPassword, companyId },
       ...tokens,
     };
+  }
+
+  /**
+   * Second login step for 2FA users: exchange the challenge from login() plus
+   * an authenticator code (or a one-time recovery code) for a session.
+   */
+  async completeTwoFactorLogin(
+    challengeToken: string,
+    code?: string,
+    recoveryCode?: string,
+    companyId?: string | null,
+  ) {
+    let payload: { sub: string; companyId?: string; purpose?: string };
+    try {
+      payload = this.jwtService.verify(challengeToken);
+    } catch {
+      throw new UnauthorizedException('Your sign-in session expired. Please log in again.');
+    }
+    if (payload.purpose !== '2fa-login') throw new UnauthorizedException('Invalid sign-in session');
+    // The challenge is bound to the tenant it was issued for
+    if ((payload.companyId || null) !== (companyId || null) && companyId) {
+      throw new UnauthorizedException('Invalid sign-in session');
+    }
+
+    const ok = recoveryCode
+      ? await this.twoFaService.verifyRecoveryCode(payload.sub, recoveryCode)
+      : code
+        ? (await this.twoFaService.isEnabled(payload.sub)) && (await this.twoFaService.verifyForLogin(payload.sub, code))
+        : false;
+    if (!ok) throw new UnauthorizedException(recoveryCode ? 'Invalid recovery code' : 'Invalid authentication code');
+
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user || user.status !== UserStatus.ACTIVE) throw new UnauthorizedException('Account is not active');
+
+    const tokens = await this.generateTokens(user, payload.companyId || null);
+    const { password, ...userWithoutPassword } = user;
+    return { user: { ...userWithoutPassword, companyId: payload.companyId || null }, ...tokens };
   }
 
   async validateUser(email: string, password: string) {
