@@ -30,7 +30,7 @@ import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { setAuthCookies, clearAuthCookies, readCookie, REFRESH_COOKIE } from './auth-cookies';
+import { setAuthCookies, clearAuthCookies, readCookie, REFRESH_COOKIE, LEGACY_REFRESH_COOKIE } from './auth-cookies';
 
 const REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 
@@ -84,7 +84,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = refreshTokenDto.refreshToken || readCookie(req, REFRESH_COOKIE);
+    const refreshToken = refreshTokenDto.refreshToken || (readCookie(req, REFRESH_COOKIE) || readCookie(req, LEGACY_REFRESH_COOKIE));
     if (!refreshToken) {
       throw new HttpException('Refresh token missing', HttpStatus.UNAUTHORIZED);
     }
@@ -107,7 +107,7 @@ export class AuthController {
     @Body('refreshToken') refreshToken?: string,
   ) {
     clearAuthCookies(res);
-    const token = refreshToken || readCookie(req, REFRESH_COOKIE);
+    const token = refreshToken || (readCookie(req, REFRESH_COOKIE) || readCookie(req, LEGACY_REFRESH_COOKIE));
     if (token) await this.authService.revokeRefreshToken(token);
     return { message: 'Logged out successfully' };
   }

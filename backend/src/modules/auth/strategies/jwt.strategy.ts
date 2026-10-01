@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { MasterPrismaService } from '../../../database/master-prisma.service';
 import { TenantPrismaService } from '../../../database/tenant-prisma.service';
-import { ACCESS_COOKIE, readCookie } from '../auth-cookies';
+import { ACCESS_COOKIE, LEGACY_ACCESS_COOKIE, readCookie } from '../auth-cookies';
 
 const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 
@@ -15,7 +15,7 @@ const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
  * are ignored so they cannot shadow a valid cookie.
  */
 function extractJwt(req: any): string | null {
-  const fromCookie = readCookie(req, ACCESS_COOKIE);
+  const fromCookie = readCookie(req, ACCESS_COOKIE) || readCookie(req, LEGACY_ACCESS_COOKIE);
   if (fromCookie && JWT_SHAPE.test(fromCookie)) return fromCookie;
   const fromHeader = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
   return fromHeader && JWT_SHAPE.test(fromHeader) ? fromHeader : null;

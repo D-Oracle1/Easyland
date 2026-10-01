@@ -9,10 +9,16 @@ import type { Request, Response, CookieOptions } from 'express';
  * Secure (and, for __Host-, no Domain + Path=/), so they cannot be overwritten
  * from a sibling subdomain or over plain HTTP.
  */
-const isProd = process.env.NODE_ENV === 'production';
+// Vercel functions don't set NODE_ENV=production at runtime, so treat any
+// Vercel deployment as production (HTTPS) as well.
+const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 
 export const ACCESS_COOKIE = isProd ? '__Host-easyland_at' : 'easyland_at';
 export const REFRESH_COOKIE = isProd ? '__Secure-easyland_rt' : 'easyland_rt';
+// Names issued before the isProd fix above (no Secure flag). Still read so
+// existing sessions keep working, and always cleared on logout.
+export const LEGACY_ACCESS_COOKIE = 'easyland_at';
+export const LEGACY_REFRESH_COOKIE = 'easyland_rt';
 // Refresh token is only ever needed by the auth endpoints.
 const REFRESH_PATH = '/api/v1/auth';
 
@@ -55,6 +61,10 @@ export function setAuthCookies(
 export function clearAuthCookies(res: Response) {
   res.clearCookie(ACCESS_COOKIE, base());
   res.clearCookie(REFRESH_COOKIE, { ...base(), sameSite: 'strict', path: REFRESH_PATH });
+  if (isProd) {
+    res.clearCookie(LEGACY_ACCESS_COOKIE, { httpOnly: true, sameSite: 'lax', path: '/' });
+    res.clearCookie(LEGACY_REFRESH_COOKIE, { httpOnly: true, sameSite: 'strict', path: REFRESH_PATH });
+  }
 }
 
 /** Read a cookie without pulling in cookie-parser. */

@@ -15,7 +15,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AuditService } from './common/services/audit.service';
-import { ACCESS_COOKIE } from './modules/auth/auth-cookies';
+import { ACCESS_COOKIE, LEGACY_ACCESS_COOKIE } from './modules/auth/auth-cookies';
 
 /** Shared bootstrap configuration — used by both local dev server and Vercel serverless */
 export async function configureApp(expressInstance?: express.Express) {
@@ -46,7 +46,7 @@ export async function configureApp(expressInstance?: express.Express) {
   // itself labels as cross-site. Bearer-token requests are unaffected.
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     const unsafe = !['GET', 'HEAD', 'OPTIONS'].includes(req.method);
-    const cookieAuth = !!req.headers.cookie?.includes(ACCESS_COOKIE) && !req.headers.authorization?.match(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/);
+    const cookieAuth = !!(req.headers.cookie?.includes(ACCESS_COOKIE) || req.headers.cookie?.includes(LEGACY_ACCESS_COOKIE)) && !req.headers.authorization?.match(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/);
     if (unsafe && cookieAuth && req.headers['sec-fetch-site'] === 'cross-site') {
       res.status(403).json({ success: false, message: 'Cross-site request blocked' });
       return;
