@@ -33,6 +33,7 @@ import { api, getImageUrl } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { getUser, clearAuth } from '@/lib/auth-storage';
 import { toast } from 'sonner';
+import { logout } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -188,8 +189,8 @@ export function Header({ onMenuClick }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleLogout = () => {
-    clearAuth();
+  const handleLogout = async () => {
+    await logout();
     router.push('/auth/login');
   };
 

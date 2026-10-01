@@ -59,6 +59,7 @@ import { isSocOwner } from '@/lib/security/owner';
 import { useBranding, getShortName } from '@/hooks/use-branding';
 import { usePlatformBranding, getPlatformName } from '@/hooks/use-platform-branding';
 import { BrandLogo } from '@/components/brand-logo';
+import { logout } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -705,8 +706,8 @@ export function Sidebar({
           </Link>
 
           <button
-            onClick={() => {
-              clearAuth();
+            onClick={async () => {
+              await logout();
               router.push('/auth/login');
             }}
             title={collapsed ? 'Logout' : undefined}

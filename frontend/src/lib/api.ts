@@ -2,8 +2,30 @@ import { getToken, clearAuth } from './auth-storage';
 
 function handleUnauthorized() {
   if (typeof window === 'undefined') return;
+  // Also clear the HttpOnly session cookies server-side (fire and forget)
+  void endServerSession();
   clearAuth();
   window.location.href = '/auth/login';
+}
+
+/** Ask the backend to clear the HttpOnly auth cookies and revoke the refresh token. */
+async function endServerSession() {
+  try {
+    await fetch(apiUrl('/auth/logout'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(_tenantId ? { 'X-Company-ID': _tenantId } : {}) },
+      keepalive: true,
+    });
+  } catch {
+    /* offline — local data is still cleared */
+  }
+}
+
+/** Full logout: end the server session, then clear local auth data. */
+export async function logout() {
+  await endServerSession();
+  clearAuth();
 }
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
