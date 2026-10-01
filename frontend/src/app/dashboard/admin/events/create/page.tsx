@@ -172,8 +172,7 @@ export default function CreateEventPage() {
           </Button>
         </Link>
         <div>
-          <PageHeader title={"Create Event"} />
-          <p className="text-sm text-gray-500">Set up a new event with a custom registration form</p>
+          <PageHeader title={"Create Event"} description={"Set up a new event with a custom registration form"} />
         </div>
       </div>
 

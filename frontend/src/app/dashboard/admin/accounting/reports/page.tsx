@@ -140,8 +140,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <PageHeader title={"Financial Reports"} />
-          <p className="text-sm text-gray-500 mt-1">Charts, trends, and detailed breakdowns</p>
+          <PageHeader title={"Financial Reports"} description={"Charts, trends, and detailed breakdowns"} />
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={tab === 'trend' ? handleExportTrend : tab === 'breakdown' ? handleExportBreakdown : handleExportRevenue}>
           <FileSpreadsheet className="w-4 h-4" /> Export CSV

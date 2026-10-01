@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const ACTION_COLORS: Record<string, string> = {
   CREATE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -64,12 +65,7 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Audit Logs</h1>
-        <p className="text-muted-foreground mt-1">
-          Track all system changes and user actions
-        </p>
-      </div>
+      <PageHeader title="Audit Logs" description="Track all system changes and user actions" />
 
       <Card>
         <CardHeader>

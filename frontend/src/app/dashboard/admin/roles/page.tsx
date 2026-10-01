@@ -269,10 +269,7 @@ export default function RolesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <PageHeader title={"Roles & Permissions"} />
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Define reusable roles with permission sets for staff members
-          </p>
+          <PageHeader title={"Roles & Permissions"} description={"Define reusable roles with permission sets for staff members"} />
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchRoles} disabled={loading}>

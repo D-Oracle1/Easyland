@@ -237,8 +237,7 @@ export default function AccountingOverviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <PageHeader title={"Accounting Overview"} />
-          <p className="text-sm text-gray-500 mt-1">Platform-wide financial summary</p>
+          <PageHeader title={"Accounting Overview"} description={"Platform-wide financial summary"} />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-2" onClick={() => { fetchCore(activePeriod); fetchTrend(trendWindow); }}>

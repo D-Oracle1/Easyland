@@ -199,8 +199,7 @@ export default function RealtorSettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <PageHeader title={"Settings"} />
-        <p className="text-muted-foreground">Manage your account settings and preferences</p>
+        <PageHeader title={"Settings"} description={"Manage your account settings and preferences"} />
       </motion.div>
 
       <div className="flex flex-col md:flex-row gap-6">

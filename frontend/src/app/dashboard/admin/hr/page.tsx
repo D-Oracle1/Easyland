@@ -27,6 +27,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 interface StaffMember {
   id: string;
@@ -323,38 +325,32 @@ export default function AdminHrPage() {
       className="space-y-8 pb-10"
     >
       {/* ── 1. HEADER ── */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">HR Control Center</h1>
-          <p className="text-muted-foreground mt-1">Manage people, performance, and operations</p>
-        </div>
-        <Button variant="outline" className="gap-2 self-start sm:self-auto" onClick={fetchData} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+      <motion.div variants={itemVariants}>
+        <PageHeader
+          title="HR Control Center"
+          description="Manage people, performance, and operations"
+          actions={
+            <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          }
+        />
       </motion.div>
 
       {/* ── 2. LIVE STATS ROW ── */}
       <motion.div variants={itemVariants} className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         {statCards.map((card, i) => (
-          <motion.div
+          <StatTile
             key={card.label}
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.05 * i, duration: 0.35, ease: 'easeOut' }}
-            className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${card.gradient} text-white p-5 shadow-md flex flex-col gap-3`}
-          >
-            <div className={`w-10 h-10 rounded-lg ${card.iconBg} flex items-center justify-center`}>
-              <card.icon className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-3xl font-bold leading-none">{card.value}</p>
-              <p className="text-sm font-medium mt-1 opacity-90">{card.label}</p>
-              <p className="text-xs mt-0.5 opacity-70">{card.sub}</p>
-            </div>
-            {/* decorative circle */}
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
-          </motion.div>
+            index={i}
+            label={card.label}
+            value={card.value}
+            hint={card.sub}
+            icon={card.icon}
+            tone={toneFromClass(card.gradient.replace(/green|emerald/g, ''))}
+            featured={i === 0}
+          />
         ))}
       </motion.div>
 

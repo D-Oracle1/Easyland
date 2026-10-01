@@ -29,6 +29,7 @@ import {
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface Registration {
   id: string;
@@ -141,10 +142,7 @@ export default function RegistrationsPage() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Registrations</h1>
-            <p className="text-sm text-gray-500">{meta.total} total</p>
-          </div>
+          <PageHeader title="Registrations" description={`${meta.total} total`} />
         </div>
         <div className="flex gap-2">
           <Link href={`/dashboard/admin/events/${eventId}/checkin`}>

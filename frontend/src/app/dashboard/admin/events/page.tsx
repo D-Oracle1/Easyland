@@ -126,8 +126,7 @@ export default function AdminEventsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <PageHeader title={"Events"} />
-          <p className="text-sm text-gray-500 mt-1">Manage all platform events</p>
+          <PageHeader title={"Events"} description={"Manage all platform events"} />
         </div>
         <Link href="/dashboard/admin/events/create">
           <Button className="gap-2">

@@ -13,6 +13,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell,
 } from 'recharts';
 import { BrandLogo } from '@/components/brand-logo';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 type Period = 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'custom';
 
@@ -168,12 +169,7 @@ export default function CashFlowPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Waves className="w-6 h-6 text-blue-600" /> Cash Flow Statement
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Track how money flows in and out of the business</p>
-        </div>
+        <PageHeader title="Cash Flow Statement" description="Track how money flows in and out of the business" icon={Waves} />
         {data && (
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>

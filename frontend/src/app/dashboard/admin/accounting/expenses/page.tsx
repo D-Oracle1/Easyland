@@ -202,8 +202,7 @@ export default function ExpensesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <PageHeader title={"Expenses"} />
-          <p className="text-sm text-gray-500 mt-1">Track and manage company expenses</p>
+          <PageHeader title={"Expenses"} description={"Track and manage company expenses"} />
         </div>
         <Button className="gap-2" onClick={openCreate}>
           <Plus className="w-4 h-4" /> Add Expense

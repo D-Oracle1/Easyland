@@ -91,8 +91,7 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <PageHeader title={"Expense Categories"} />
-          <p className="text-sm text-gray-500 mt-1">Organize expenses into meaningful categories</p>
+          <PageHeader title={"Expense Categories"} description={"Organize expenses into meaningful categories"} />
         </div>
         <Button className="gap-2" onClick={openCreate}>
           <Plus className="w-4 h-4" /> Add Category

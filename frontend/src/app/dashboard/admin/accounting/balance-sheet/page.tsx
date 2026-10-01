@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useBranding } from '@/hooks/use-branding';
 import { BrandLogo } from '@/components/brand-logo';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 export default function BalanceSheetPage() {
   const branding = useBranding();
@@ -122,12 +123,7 @@ export default function BalanceSheetPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Scale className="w-6 h-6 text-blue-600" /> Balance Sheet
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Assets, liabilities and equity at a point in time</p>
-        </div>
+        <PageHeader title="Balance Sheet" description="Assets, liabilities and equity at a point in time" icon={Scale} />
         {data && (
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>

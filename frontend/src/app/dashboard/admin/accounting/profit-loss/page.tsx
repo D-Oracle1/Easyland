@@ -248,8 +248,7 @@ export default function ProfitLossPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <PageHeader title={"Profit & Loss Statement"} />
-          <p className="text-sm text-gray-500 mt-1">Dynamic financial report from real transaction data</p>
+          <PageHeader title={"Profit & Loss Statement"} description={"Dynamic financial report from real transaction data"} />
         </div>
         {data && (
           <div className="flex gap-2 flex-wrap">

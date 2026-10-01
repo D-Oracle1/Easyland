@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const SOURCE_ICONS: Record<string, any> = {
   FACEBOOK:  { icon: Facebook,       color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-950' },
@@ -116,12 +117,7 @@ export default function LeadsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {total.toLocaleString()} total leads
-          </p>
-        </div>
+        <PageHeader title="Leads" description={`${total.toLocaleString()} total leads`} />
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={load}>
             <RefreshCw className="h-4 w-4 mr-1.5" />

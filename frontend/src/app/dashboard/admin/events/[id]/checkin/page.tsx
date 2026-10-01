@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface CheckInResult {
   alreadyCheckedIn: boolean;
@@ -236,10 +237,7 @@ export default function CheckInPage() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">QR Check-in Scanner</h1>
-          <p className="text-sm text-gray-500">Scan attendee QR codes to check them in</p>
-        </div>
+        <PageHeader title="QR Check-in Scanner" description="Scan attendee QR codes to check them in" icon={QrCode} />
       </div>
 
       {/* Closed event banner */}
