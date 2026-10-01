@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 export default function GOStaffPage() {
   const [staff, setStaff] = useState<any[]>([]);
@@ -36,10 +37,7 @@ export default function GOStaffPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Staff</h1>
-          <p className="text-sm text-muted-foreground">All staff members across the company</p>
-        </div>
+        <PageHeader title={"Staff"} description={"All staff members across the company"} />
         <div className="flex gap-3">
           <Badge variant="outline" className="px-3 py-1">{staff.length} total</Badge>
           <Badge className="bg-green-100 text-green-700 px-3 py-1">{active} active</Badge>

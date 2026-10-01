@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 export default function GOHRPage() {
   const [summary, setSummary] = useState<any>(null);
@@ -75,10 +76,7 @@ export default function GOHRPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">HR Overview</h1>
-        <p className="text-sm text-muted-foreground">Human Resources summary and quick access</p>
-      </div>
+      <PageHeader title={"HR Overview"} description={"Human Resources summary and quick access"} />
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

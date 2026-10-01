@@ -46,6 +46,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { api, getImageUrl } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface Task {
   id: string;
@@ -311,10 +312,7 @@ export default function TasksPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">My Tasks</h1>
-          <p className="text-muted-foreground">Manage and track your assigned tasks</p>
-        </div>
+        <PageHeader title={"My Tasks"} description={"Manage and track your assigned tasks"} />
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

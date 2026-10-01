@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 export default function GOClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -34,10 +35,7 @@ export default function GOClientsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Clients</h1>
-          <p className="text-sm text-muted-foreground">Overview of all clients on the platform</p>
-        </div>
+        <PageHeader title={"Clients"} description={"Overview of all clients on the platform"} />
         <Badge variant="outline" className="text-sm px-3 py-1">{clients.length} total</Badge>
       </div>
 

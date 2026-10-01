@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const CATEGORY_TYPES = [
   { value: 'OPERATIONAL', label: 'Operational', color: 'bg-blue-100 text-blue-700' },
@@ -90,7 +91,7 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Expense Categories</h1>
+          <PageHeader title={"Expense Categories"} />
           <p className="text-sm text-gray-500 mt-1">Organize expenses into meaningful categories</p>
         </div>
         <Button className="gap-2" onClick={openCreate}>

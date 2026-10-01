@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const SOURCE_ICONS: Record<string, { icon: any; color: string; bg: string }> = {
   FACEBOOK:  { icon: Facebook,      color: 'text-blue-600',   bg: 'bg-blue-100 dark:bg-blue-900' },
@@ -78,10 +79,7 @@ export default function CampaignsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Campaign ROI</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Lead source analytics &amp; staff performance</p>
-        </div>
+        <PageHeader title={"Campaign ROI"} description={"Lead source analytics & staff performance"} />
         <div className="flex items-center gap-2 flex-wrap">
           <Input
             type="date" className="h-9 w-[150px]" value={dateFrom}

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { api, getImageUrl } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -53,10 +54,7 @@ export default function GOPropertiesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Properties</h1>
-          <p className="text-sm text-muted-foreground">Overview of all company properties</p>
-        </div>
+        <PageHeader title={"Properties"} description={"Overview of all company properties"} />
         <div className="flex gap-3">
           <Badge variant="outline" className="px-3 py-1">{properties.length} total</Badge>
           <Badge className="bg-green-100 text-green-700 px-3 py-1">{available} available</Badge>

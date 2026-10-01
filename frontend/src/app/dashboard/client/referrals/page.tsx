@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { getUser } from '@/lib/auth-storage';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 export default function ClientReferralsPage() {
   const [referrals, setReferrals] = useState<any[]>([]);
@@ -68,18 +69,15 @@ export default function ClientReferralsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">My Referrals</h1>
-        <p className="text-muted-foreground">Track people who signed up using your referral link</p>
-      </div>
+      <PageHeader title={"My Referrals"} description={"Track people who signed up using your referral link"} />
 
       {referralCode && (
         <Card className="shadow-sm">
           <CardContent className="p-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#22c55e]/10 flex items-center justify-center">
-                  <Link className="w-5 h-5 text-[#22c55e]" />
+                <div className="w-10 h-10 rounded-full bg-[#15803d]/10 flex items-center justify-center">
+                  <Link className="w-5 h-5 text-[#15803d]" />
                 </div>
                 <div>
                   <p className="font-semibold text-sm">Your Referral Link</p>
@@ -100,7 +98,7 @@ export default function ClientReferralsPage() {
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Users2 className="w-5 h-5 text-[#22c55e]" />
+            <Users2 className="w-5 h-5 text-[#15803d]" />
             Referral Leads ({referrals.length})
           </CardTitle>
         </CardHeader>
@@ -113,7 +111,7 @@ export default function ClientReferralsPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-[#16a34a] hover:bg-[#16a34a]">
+                  <TableRow className="bg-[#15803d] hover:bg-[#15803d]">
                     <TableHead className="text-white font-semibold">NAME</TableHead>
                     <TableHead className="text-white font-semibold hidden md:table-cell">EMAIL</TableHead>
                     <TableHead className="text-white font-semibold">ROLE</TableHead>

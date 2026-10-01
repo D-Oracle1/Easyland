@@ -52,6 +52,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface AllowanceConfig {
   id: string;
@@ -423,10 +424,7 @@ export default function SalaryConfigPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Salary Configuration</h1>
-          <p className="text-muted-foreground">Configure allowances, deductions, and salary structures</p>
-        </div>
+        <PageHeader title={"Salary Configuration"} description={"Configure allowances, deductions, and salary structures"} />
         <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh

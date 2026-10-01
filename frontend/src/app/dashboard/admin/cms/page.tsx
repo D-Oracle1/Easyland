@@ -33,6 +33,7 @@ import { resetBrandingCache } from '@/hooks/use-branding';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { ImageCropModal } from '@/components/ui/image-crop-modal';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 
 const TABS = [
@@ -846,10 +847,7 @@ export default function CmsPage() {
     />
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Content Management</h1>
-          <p className="text-muted-foreground">Manage your website pages and content</p>
-        </div>
+        <PageHeader title={"Content Management"} description={"Manage your website pages and content"} />
         <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
           Save Changes

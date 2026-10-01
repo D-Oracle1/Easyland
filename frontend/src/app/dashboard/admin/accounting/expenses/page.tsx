@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { getToken } from '@/lib/auth-storage';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -201,7 +202,7 @@ export default function ExpensesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Expenses</h1>
+          <PageHeader title={"Expenses"} />
           <p className="text-sm text-gray-500 mt-1">Track and manage company expenses</p>
         </div>
         <Button className="gap-2" onClick={openCreate}>

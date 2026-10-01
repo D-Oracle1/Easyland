@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useBranding } from '@/hooks/use-branding';
 import { BrandLogo } from '@/components/brand-logo';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 type Period = 'this_month' | 'last_month' | 'this_quarter' | 'this_year' | 'custom';
 
@@ -247,7 +248,7 @@ export default function ProfitLossPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Profit & Loss Statement</h1>
+          <PageHeader title={"Profit & Loss Statement"} />
           <p className="text-sm text-gray-500 mt-1">Dynamic financial report from real transaction data</p>
         </div>
         {data && (

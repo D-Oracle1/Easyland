@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface Condition {
   field: string;
@@ -165,12 +166,7 @@ export default function AutomationPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Assignment Automation</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Automatically assign leads to sales reps based on campaign, source, or location rules
-          </p>
-        </div>
+        <PageHeader title={"Assignment Automation"} description={"Automatically assign leads to sales reps based on campaign, source, or location rules"} />
         <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1.5" />New Rule
         </Button>

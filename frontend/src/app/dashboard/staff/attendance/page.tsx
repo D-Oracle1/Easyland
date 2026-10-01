@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 interface AttendanceRecord {
   id: string;
@@ -243,10 +245,7 @@ export default function AttendancePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Attendance</h1>
-          <p className="text-muted-foreground">Track your work hours and attendance</p>
-        </div>
+        <PageHeader title={"Attendance"} description={"Track your work hours and attendance"} />
         <Button variant="outline" className="gap-2" onClick={fetchAttendance} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -357,27 +356,16 @@ export default function AttendancePage() {
 
       {/* Weekly Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
-          <motion.div
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className={`p-3 rounded-lg ${stat.bg}`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <h3 className="text-2xl font-bold">{stat.value}</h3>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 

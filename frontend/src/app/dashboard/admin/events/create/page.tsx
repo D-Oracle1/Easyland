@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Text' },
@@ -171,7 +172,7 @@ export default function CreateEventPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Event</h1>
+          <PageHeader title={"Create Event"} />
           <p className="text-sm text-gray-500">Set up a new event with a custom registration form</p>
         </div>
       </div>

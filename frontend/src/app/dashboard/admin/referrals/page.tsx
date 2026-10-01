@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface ReferralEntry {
   id: string;
@@ -75,10 +76,7 @@ export default function AdminReferralsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Referral Tracking</h1>
-          <p className="text-muted-foreground">All users who signed up via referral links</p>
-        </div>
+        <PageHeader title={"Referral Tracking"} description={"All users who signed up via referral links"} />
         <div className="flex items-center gap-3">
           <Badge variant="secondary" className="text-sm px-3 py-1">
             {referrals.length} total referrals
@@ -90,7 +88,7 @@ export default function AdminReferralsPage() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Users2 className="w-5 h-5 text-[#22c55e]" />
+              <Users2 className="w-5 h-5 text-[#15803d]" />
               Referral Leads
             </CardTitle>
             <div className="relative w-full sm:w-64">
@@ -113,7 +111,7 @@ export default function AdminReferralsPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-[#16a34a] hover:bg-[#16a34a]">
+                  <TableRow className="bg-[#15803d] hover:bg-[#15803d]">
                     <TableHead className="text-white font-semibold">REFERRED USER</TableHead>
                     <TableHead className="text-white font-semibold hidden md:table-cell">EMAIL</TableHead>
                     <TableHead className="text-white font-semibold">ROLE</TableHead>

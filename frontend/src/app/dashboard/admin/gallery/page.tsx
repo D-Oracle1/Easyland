@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { api, getImageUrl } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 type GalleryItemType = 'PHOTO' | 'VIDEO';
 
@@ -178,10 +179,7 @@ export default function GalleryAdminPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Gallery Management</h1>
-          <p className="text-muted-foreground">Manage photos and videos for the public gallery</p>
-        </div>
+        <PageHeader title={"Gallery Management"} description={"Manage photos and videos for the public gallery"} />
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => handleUpload('PHOTO')} disabled={uploading}>
             {uploading ? (

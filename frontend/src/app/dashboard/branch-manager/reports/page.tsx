@@ -16,7 +16,7 @@ function fmt(n: number) {
   return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(n);
 }
 
-const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6', '#ec4899'];
+const COLORS = ['#6366f1', '#15803d', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6', '#ec4899'];
 
 export default function BranchReportsPage() {
   const [pl, setPl]           = useState<any>(null);

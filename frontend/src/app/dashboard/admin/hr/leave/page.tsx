@@ -36,6 +36,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { api, getImageUrl } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 interface LeaveRequest {
   id: string;
@@ -170,10 +172,7 @@ export default function AdminLeavePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Leave Management</h1>
-          <p className="text-muted-foreground">Review and manage staff leave requests</p>
-        </div>
+        <PageHeader title={"Leave Management"} description={"Review and manage staff leave requests"} />
         <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -182,25 +181,16 @@ export default function AdminLeavePage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        {stats.map((stat, index) => (
-          <motion.div
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 rounded-lg ${stat.bg}`}>
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <span className="text-2xl font-bold">{stat.value}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 

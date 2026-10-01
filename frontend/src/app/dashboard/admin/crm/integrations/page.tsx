@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const PROVIDERS = [
   {
@@ -148,12 +149,7 @@ export default function IntegrationsPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Ad Integrations</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Connect your ad platforms to capture leads automatically into the CRM
-          </p>
-        </div>
+        <PageHeader title={"Ad Integrations"} description={"Connect your ad platforms to capture leads automatically into the CRM"} />
         <Link href="/dashboard/admin/crm/leads">
           <Button variant="outline" size="sm">View Leads</Button>
         </Link>

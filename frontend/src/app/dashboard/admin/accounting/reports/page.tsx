@@ -13,6 +13,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 type ReportTab = 'trend' | 'breakdown' | 'revenue';
 type TrendMonths = 6 | 12 | 24;
@@ -139,7 +140,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financial Reports</h1>
+          <PageHeader title={"Financial Reports"} />
           <p className="text-sm text-gray-500 mt-1">Charts, trends, and detailed breakdowns</p>
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={tab === 'trend' ? handleExportTrend : tab === 'breakdown' ? handleExportBreakdown : handleExportRevenue}>

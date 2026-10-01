@@ -25,6 +25,7 @@ import { cn, getTierBgClass } from '@/lib/utils';
 import { api, getImageUrl } from '@/lib/api';
 import { getUser, getToken, updateUser } from '@/lib/auth-storage';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -198,7 +199,7 @@ export default function RealtorSettingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <PageHeader title={"Settings"} />
         <p className="text-muted-foreground">Manage your account settings and preferences</p>
       </motion.div>
 

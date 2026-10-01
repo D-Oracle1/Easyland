@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type StatTone = 'brand' | 'amber' | 'sky' | 'rose' | 'slate';
@@ -21,7 +22,7 @@ export function StatTile({
   label,
   value,
   hint,
-  icon: Icon,
+  icon: Icon = BarChart3,
   tone = 'brand',
   featured = false,
   loading = false,
@@ -30,7 +31,7 @@ export function StatTile({
   label: string;
   value: React.ReactNode;
   hint?: React.ReactNode;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   tone?: StatTone;
   featured?: boolean;
   loading?: boolean;

@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { api, getImageUrl } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface QrData {
   token: string;
@@ -208,10 +209,7 @@ export default function AdminAttendancePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Attendance Management</h1>
-          <p className="text-muted-foreground">Monitor and manage staff attendance records</p>
-        </div>
+        <PageHeader title={"Attendance Management"} description={"Monitor and manage staff attendance records"} />
         <div className="flex gap-2 flex-wrap">
           <Input
             type="date"

@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { api, getImageUrl } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface TeamMember {
   id: string;
@@ -151,10 +152,7 @@ export default function TeamPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">My Team</h1>
-          <p className="text-muted-foreground">View and connect with your team members</p>
-        </div>
+        <PageHeader title={"My Team"} description={"View and connect with your team members"} />
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

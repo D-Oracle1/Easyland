@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface PayrollRecord {
   id: string;
@@ -107,7 +108,7 @@ const downloadPayslip = (payslip: PayrollRecord) => {
   const allowanceRows = payslip.allowances
     ? Object.entries(payslip.allowances)
         .filter(([, v]) => v > 0)
-        .map(([k, v]) => `<tr><td style="padding:6px 0;border-bottom:1px solid #f0f0f0">${k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}</td><td style="text-align:right;color:#16a34a">${fmt(v)}</td></tr>`)
+        .map(([k, v]) => `<tr><td style="padding:6px 0;border-bottom:1px solid #f0f0f0">${k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}</td><td style="text-align:right;color:#15803d">${fmt(v)}</td></tr>`)
         .join('')
     : '';
 
@@ -129,7 +130,7 @@ const downloadPayslip = (payslip: PayrollRecord) => {
     h1 { font-size: 22px; color: #1e40af; margin-bottom: 4px; }
     .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px; }
-    .badge { display: inline-block; background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+    .badge { display: inline-block; background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
     .badge.approved { background: #dbeafe; color: #1d4ed8; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
     th { text-align: left; color: #666; font-size: 11px; text-transform: uppercase; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
@@ -160,11 +161,11 @@ const downloadPayslip = (payslip: PayrollRecord) => {
   <table>
     <thead><tr><th>Earnings</th><th>Amount</th></tr></thead>
     <tbody>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #f0f0f0">Base Salary</td><td style="text-align:right;color:#16a34a">${fmt(base)}</td></tr>
-      ${overtime > 0 ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0f0f0">Overtime</td><td style="text-align:right;color:#16a34a">${fmt(overtime)}</td></tr>` : ''}
-      ${bonus > 0 ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0f0f0">Bonus</td><td style="text-align:right;color:#16a34a">${fmt(bonus)}</td></tr>` : ''}
+      <tr><td style="padding:8px 0;border-bottom:1px solid #f0f0f0">Base Salary</td><td style="text-align:right;color:#15803d">${fmt(base)}</td></tr>
+      ${overtime > 0 ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0f0f0">Overtime</td><td style="text-align:right;color:#15803d">${fmt(overtime)}</td></tr>` : ''}
+      ${bonus > 0 ? `<tr><td style="padding:8px 0;border-bottom:1px solid #f0f0f0">Bonus</td><td style="text-align:right;color:#15803d">${fmt(bonus)}</td></tr>` : ''}
       ${allowanceRows}
-      <tr class="total-row"><td>Total Earnings</td><td style="color:#16a34a">${fmt(gross)}</td></tr>
+      <tr class="total-row"><td>Total Earnings</td><td style="color:#15803d">${fmt(gross)}</td></tr>
     </tbody>
   </table>
 
@@ -296,10 +297,7 @@ export default function PayslipsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Payslips</h1>
-          <p className="text-muted-foreground">View your salary details and payment history</p>
-        </div>
+        <PageHeader title={"Payslips"} description={"View your salary details and payment history"} />
         <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh

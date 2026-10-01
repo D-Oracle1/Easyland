@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface LeaveBalance {
   annual: { total: number; used: number; remaining: number };
@@ -276,10 +277,7 @@ export default function LeavePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Leave Management</h1>
-          <p className="text-muted-foreground">Request and track your leave</p>
-        </div>
+        <PageHeader title={"Leave Management"} description={"Request and track your leave"} />
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

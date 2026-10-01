@@ -67,6 +67,8 @@ import { api } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { getToken } from '@/lib/auth-storage';
 import { Switch } from '@/components/ui/switch';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 interface StaffData {
   id: string;
@@ -618,10 +620,7 @@ function AdminStaffPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Staff Management</h1>
-          <p className="text-muted-foreground">Manage all staff members and their roles</p>
-        </div>
+        <PageHeader title={"Staff Management"} description={"Manage all staff members and their roles"} />
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="gap-2" onClick={fetchStaff} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -644,23 +643,17 @@ function AdminStaffPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        {stats.map((stat, index) => (
-          <motion.div
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm font-medium">{stat.label}</p>
-                {stat.change && (
-                  <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.label}
+            value={stat.value}
+            hint={stat.change || undefined}
+            icon={undefined}
+            tone={toneFromClass(undefined)}
+            featured={index === 0}
+          />
         ))}
       </div>
 

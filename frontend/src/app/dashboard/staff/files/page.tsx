@@ -44,6 +44,7 @@ import {
 import { api } from '@/lib/api';
 import { getToken, getUser } from '@/lib/auth-storage';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface SharedFile {
   id: string;
@@ -273,7 +274,7 @@ export default function FilesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Shared Files</h1>
+          <PageHeader title={"Shared Files"} />
           <p className="text-muted-foreground">
             Access and manage team files and documents
             {summary ? ` (${formatFileSize(summary.totalSize)} total)` : ''}

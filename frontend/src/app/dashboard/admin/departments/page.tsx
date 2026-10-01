@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface DepartmentData {
   id: string;
@@ -296,10 +297,7 @@ export default function AdminDepartmentsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Departments</h1>
-          <p className="text-muted-foreground">Manage organizational departments and structure</p>
-        </div>
+        <PageHeader title={"Departments"} description={"Manage organizational departments and structure"} />
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={fetchDepartments} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

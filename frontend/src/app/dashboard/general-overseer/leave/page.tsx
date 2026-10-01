@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -113,10 +114,7 @@ export default function LeaveApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Leave Approvals</h1>
-        <p className="text-sm text-muted-foreground">Review and manage leave requests from all staff and admins</p>
-      </div>
+      <PageHeader title={"Leave Approvals"} description={"Review and manage leave requests from all staff and admins"} />
 
       {/* Filter */}
       <Card>

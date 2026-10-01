@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/dialog';
 import { api, getImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const ROLES = ['ADMIN', 'REALTOR', 'CLIENT', 'STAFF'];
 const ROLE_COLORS: Record<string, string> = {
@@ -138,7 +139,7 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+          <PageHeader title={"User Management"} />
           <p className="text-sm text-muted-foreground">
             View and manage all users including inactive accounts ({total} total)
           </p>

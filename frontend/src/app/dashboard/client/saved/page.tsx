@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface SavedPostItem extends PostData {
   savedAt: string;
@@ -104,10 +105,7 @@ export default function SavedPostsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Saved Posts</h1>
-        <p className="text-muted-foreground">Posts you've bookmarked for later</p>
-      </div>
+      <PageHeader title={"Saved Posts"} description={"Posts you've bookmarked for later"} />
 
       {loading ? (
         <div className="flex items-center justify-center py-20">

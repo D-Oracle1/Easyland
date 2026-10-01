@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { api, getImageUrl } from '@/lib/api';
 import { getUser } from '@/lib/auth-storage';
 import { usePusher } from '@/contexts/pusher-context';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface Channel {
   id: string;
@@ -242,10 +243,7 @@ export default function ChannelsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Team Channels</h1>
-          <p className="text-muted-foreground">Collaborate with your team in real-time</p>
-        </div>
+        <PageHeader title={"Team Channels"} description={"Collaborate with your team in real-time"} />
         <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4" />
           New Channel

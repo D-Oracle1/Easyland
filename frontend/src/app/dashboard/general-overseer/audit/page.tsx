@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const METHOD_COLORS: Record<string, string> = {
   GET: 'bg-blue-100 text-blue-700',
@@ -47,10 +48,7 @@ export default function GOAuditPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Audit Logs</h1>
-          <p className="text-sm text-muted-foreground">Complete record of all platform actions</p>
-        </div>
+        <PageHeader title={"Audit Logs"} description={"Complete record of all platform actions"} />
         <Badge variant="outline" className="px-3 py-1">{total} entries</Badge>
       </div>
 

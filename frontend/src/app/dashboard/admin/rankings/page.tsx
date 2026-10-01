@@ -112,9 +112,9 @@ const AWARD_LABELS: Record<string, string> = {
 };
 
 const AWARD_COLORS: Record<string, string> = {
-  STAFF_OF_MONTH: 'from-blue-500 to-blue-600',
-  REALTOR_OF_MONTH: 'from-[#16a34a] to-[#22c55e]',
-  CLIENT_OF_MONTH: 'from-[#fca639] to-[#e8953a]',
+  STAFF_OF_MONTH: 'from-primary to-primary-800',
+  REALTOR_OF_MONTH: 'from-primary to-primary-800',
+  CLIENT_OF_MONTH: 'from-amber-500 to-orange-600',
 };
 
 const MONTH_NAMES = [
@@ -717,7 +717,7 @@ export default function RankingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <Card className="bg-gradient-to-br from-primary to-primary-800 text-white">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Star className="w-5 h-5" />

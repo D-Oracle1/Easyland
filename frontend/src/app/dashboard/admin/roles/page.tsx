@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -268,7 +269,7 @@ export default function RolesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Roles & Permissions</h1>
+          <PageHeader title={"Roles & Permissions"} />
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Define reusable roles with permission sets for staff members
           </p>

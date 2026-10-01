@@ -26,12 +26,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(n);
 }
 
-const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'];
+const CHART_COLORS = ['#6366f1', '#15803d', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'];
 
 const emptyForm = {
   name: '', code: '', description: '', address: '', city: '', state: '',
@@ -193,7 +194,7 @@ export default function AdminBranchesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-primary" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Branch Management</h1>
+          <PageHeader title={"Branch Management"} />
           <Badge variant="secondary">{branches.length}</Badge>
           {transfers.length > 0 && (
             <Badge className="bg-yellow-100 text-yellow-700">{transfers.length} pending transfer{transfers.length > 1 ? 's' : ''}</Badge>
@@ -318,7 +319,7 @@ export default function AdminBranchesPage() {
                       <Tooltip formatter={(v: number) => fmt(v)} />
                       <Bar dataKey="Revenue"   fill="#6366f1" radius={[3, 3, 0, 0]} />
                       <Bar dataKey="Expenses"  fill="#ef4444" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="NetProfit" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                      <Bar dataKey="NetProfit" fill="#15803d" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -350,7 +351,7 @@ export default function AdminBranchesPage() {
                           <td className="text-right px-3">{b.totalSales}</td>
                           <td className="text-right px-3 text-green-600 font-medium">{fmt(b.revenue)}</td>
                           <td className="text-right px-3 text-red-500">{fmt(b.expenses)}</td>
-                          <td className="text-right pl-3 font-bold" style={{ color: b.netProfit >= 0 ? '#22c55e' : '#ef4444' }}>
+                          <td className="text-right pl-3 font-bold" style={{ color: b.netProfit >= 0 ? '#15803d' : '#ef4444' }}>
                             {fmt(b.netProfit)}
                           </td>
                         </tr>

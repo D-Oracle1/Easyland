@@ -36,6 +36,7 @@ import { NairaSign } from '@/components/icons/naira-sign';
 import { AreaUnitSelect } from '@/components/area-unit-select';
 import { toast } from 'sonner';
 import { getToken } from '@/lib/auth-storage';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -299,23 +300,16 @@ export default function StaffSalesPage() {
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statsData.map((stat, index) => (
-          <motion.div
+        {statsData.map((stat: any, index: number) => (
+          <StatTile
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className={`inline-flex p-3 rounded-lg ${stat.bgColor} mb-4`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-                <h3 className="text-2xl font-bold">{stat.value}</h3>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 
@@ -355,7 +349,7 @@ export default function StaffSalesPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
-                      <p className="text-lg font-bold text-[#22c55e]">{formatCurrency(Number(sale.salePrice))}</p>
+                      <p className="text-lg font-bold text-[#15803d]">{formatCurrency(Number(sale.salePrice))}</p>
                       <Badge className={
                         sale.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                         sale.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
@@ -473,7 +467,7 @@ export default function StaffSalesPage() {
                         <div className="flex gap-2">
                           {isAvailable && (
                             <Button
-                              className="bg-[#16a34a] hover:bg-[#15803d]"
+                              className="bg-[#15803d] hover:bg-[#15803d]"
                               onClick={() => openReportSale(property)}
                             >
                               <CheckCircle className="w-4 h-4 mr-2" />
@@ -501,7 +495,7 @@ export default function StaffSalesPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#22c55e]" />
+              <CheckCircle className="w-5 h-5 text-[#15803d]" />
               Report Sale
             </DialogTitle>
             <DialogDescription>
@@ -511,8 +505,8 @@ export default function StaffSalesPage() {
 
           <div className="grid gap-6 py-4">
             {/* Property Summary */}
-            <div className="p-4 bg-[#22c55e]/5 border border-[#22c55e]/20 rounded-lg">
-              <h4 className="font-semibold text-[#22c55e] mb-2">Property Details</h4>
+            <div className="p-4 bg-[#15803d]/5 border border-[#15803d]/20 rounded-lg">
+              <h4 className="font-semibold text-[#15803d] mb-2">Property Details</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Type</p>
@@ -537,7 +531,7 @@ export default function StaffSalesPage() {
                   onClick={() => setSaleAttribution('REALTOR')}
                   className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
                     saleAttribution === 'REALTOR'
-                      ? 'border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]'
+                      ? 'border-[#15803d] bg-[#15803d]/10 text-[#15803d]'
                       : 'border-gray-200 text-gray-500 hover:border-gray-300'
                   }`}
                 >
@@ -662,7 +656,7 @@ export default function StaffSalesPage() {
                     onClick={() => updateSaleForm('paymentPlan', 'FULL')}
                     className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
                       saleForm.paymentPlan === 'FULL'
-                        ? 'border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]'
+                        ? 'border-[#15803d] bg-[#15803d]/10 text-[#15803d]'
                         : 'border-gray-200 text-gray-500 hover:border-gray-300'
                     }`}
                   >
@@ -811,7 +805,7 @@ export default function StaffSalesPage() {
                         : '—'}
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-[#22c55e]">
+                <p className="text-2xl font-bold text-[#15803d]">
                   {formatCurrency(parseFloat(saleForm.totalAmount) || 0)}
                 </p>
               </div>
@@ -841,7 +835,7 @@ export default function StaffSalesPage() {
               Cancel
             </Button>
             <Button
-              className="bg-[#16a34a] hover:bg-[#15803d]"
+              className="bg-[#15803d] hover:bg-[#15803d]"
               onClick={handleSubmitSale}
               disabled={isSubmitting}
             >

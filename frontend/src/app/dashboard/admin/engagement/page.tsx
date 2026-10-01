@@ -169,7 +169,7 @@ const STAT_CARDS = [
     key: 'totalPosts' as const,
     title: 'Total Posts',
     icon: FileText,
-    gradient: 'from-blue-500 to-blue-600',
+    gradient: 'from-primary to-primary-800',
     glow: 'shadow-blue-500/30',
   },
   {

@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const SOURCE_COLORS: Record<string, string> = {
   FACEBOOK:  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -106,12 +107,7 @@ export default function CrmDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">CRM & Lead Management</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Capture, score, and convert leads from all ad platforms
-          </p>
-        </div>
+        <PageHeader title={"CRM & Lead Management"} description={"Capture, score, and convert leads from all ad platforms"} />
         <Button variant="outline" size="sm" onClick={load}>
           <RefreshCw className="h-4 w-4 mr-1.5" />Refresh
         </Button>

@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 const STAGES = [
   { id: 'NEW',           label: 'New Leads',      color: 'border-t-blue-500',    count_color: 'bg-blue-100 text-blue-700' },
@@ -140,7 +141,7 @@ export default function PipelinePage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Sales Pipeline</h1>
+          <PageHeader title={"Sales Pipeline"} />
           <p className="text-sm text-muted-foreground mt-0.5">
             {totalLeads} leads · Drag cards to change stage
           </p>

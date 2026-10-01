@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TierAvatar } from '@/components/tier/tier-badge';
 import { api } from '@/lib/api';
 import { formatCurrency, getTierBgClass } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 export default function GORealtorsPage() {
   const [realtors, setRealtors] = useState<any[]>([]);
@@ -46,10 +47,7 @@ export default function GORealtorsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Realtors</h1>
-          <p className="text-sm text-muted-foreground">Overview of all realtors on the platform</p>
-        </div>
+        <PageHeader title={"Realtors"} description={"Overview of all realtors on the platform"} />
         <Badge variant="outline" className="text-sm px-3 py-1">
           {realtors.length} total
         </Badge>

@@ -49,6 +49,8 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 interface HRPolicy {
   id: string;
@@ -248,10 +250,7 @@ export default function HRPoliciesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">HR Policies & Deduction Rules</h1>
-          <p className="text-muted-foreground">Configure automatic penalties for policy violations</p>
-        </div>
+        <PageHeader title={"HR Policies & Deduction Rules"} description={"Configure automatic penalties for policy violations"} />
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -266,25 +265,16 @@ export default function HRPoliciesPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        {stats.map((stat, index) => (
-          <motion.div
+        {stats.map((stat: any, index: number) => (
+          <StatTile
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`p-2 rounded-lg ${stat.bg}`}>
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <span className="text-2xl font-bold">{stat.value}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            index={index}
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            tone={toneFromClass(stat.color)}
+            featured={index === 0}
+          />
         ))}
       </div>
 

@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { api, getImageUrl } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface PerformanceReview {
   id: string;
@@ -177,10 +178,7 @@ export default function ReviewsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Performance Reviews</h1>
-          <p className="text-muted-foreground">Track your performance and career growth</p>
-        </div>
+        <PageHeader title={"Performance Reviews"} description={"Track your performance and career growth"} />
         <Button variant="outline" className="gap-2" onClick={fetchData} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh

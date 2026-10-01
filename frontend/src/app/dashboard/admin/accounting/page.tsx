@@ -15,6 +15,8 @@ import { NairaSign } from '@/components/icons/naira-sign';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { PageHeader } from '@/components/dashboard/page-header';
+import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 type TrendWindow = 1 | 3 | 6 | 12;
 
@@ -235,7 +237,7 @@ export default function AccountingOverviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Accounting Overview</h1>
+          <PageHeader title={"Accounting Overview"} />
           <p className="text-sm text-gray-500 mt-1">Platform-wide financial summary</p>
         </div>
         <div className="flex gap-2">
@@ -302,21 +304,16 @@ export default function AccountingOverviewPage() {
           </div>
         ) : (
           <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 transition-opacity duration-150 ${summaryLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
-            {statCards.map((card) => (
-              <Card key={card.label} className="overflow-hidden">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 truncate">{card.label}</p>
-                      <p className="text-xs text-blue-500 font-medium truncate">{periodLabel}</p>
-                      <p className="text-lg font-bold text-gray-900 mt-1 truncate">{card.value}</p>
-                    </div>
-                    <div className={`p-2 rounded-lg ${card.bg} ml-2 flex-shrink-0`}>
-                      <card.icon className={`w-4 h-4 ${card.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {statCards.map((card: any, index: number) => (
+              <StatTile
+                key={card.label}
+                index={index}
+                label={card.label}
+                value={card.value}
+                icon={card.icon}
+                tone={toneFromClass(card.color)}
+                featured={index === 0}
+              />
             ))}
           </div>
         )}

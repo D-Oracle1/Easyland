@@ -37,6 +37,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 interface Event {
   id: string;
@@ -125,7 +126,7 @@ export default function AdminEventsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Events</h1>
+          <PageHeader title={"Events"} />
           <p className="text-sm text-gray-500 mt-1">Manage all platform events</p>
         </div>
         <Link href="/dashboard/admin/events/create">
