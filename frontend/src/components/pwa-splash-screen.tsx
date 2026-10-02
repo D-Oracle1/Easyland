@@ -17,8 +17,12 @@ const SPLASH_ICON = '/api/app-icon?size=320&rounded=1&v=2';
 export function PWASplashScreen() {
   const [visible, setVisible] = useState(false);
   const [iconLoaded, setIconLoaded] = useState(false);
+  const iconShownAtRef = useRef(0);
+  const onIconReady = () => {
+    if (!iconShownAtRef.current) iconShownAtRef.current = Date.now();
+    setIconLoaded(true);
+  };
   const [leaving, setLeaving] = useState(false);
-  const startRef = useRef(0);
   const doneRef = useRef(false);
 
   // Decide whether to show the splash (installed PWA, once per app session).
@@ -30,7 +34,6 @@ export function PWASplashScreen() {
     if (!isStandalone || sessionStorage.getItem('pwa_splash_shown')) return;
     sessionStorage.setItem('pwa_splash_shown', '1');
 
-    startRef.current = Date.now();
     setVisible(true);
   }, []);
 
@@ -39,9 +42,11 @@ export function PWASplashScreen() {
   useEffect(() => {
     if (!visible || doneRef.current) return;
 
-    const MIN_MS = 800; // keep the logo up long enough to register
-    const MAX_MS = 3000; // hard ceiling — always release the splash
-    const FADE_MS = 400;
+    // Timed from when the logo appears, so the pop-in always plays in full:
+    // ~1.2s pop + a beat of the breathing pulse before fading out.
+    const SHOW_MS = 2600;
+    const MAX_MS = 5000; // hard ceiling — always release the splash
+    const FADE_MS = 600;
 
     const beginLeave = () => {
       if (doneRef.current) return;
@@ -58,7 +63,7 @@ export function PWASplashScreen() {
 
     // Release once the window has loaded and the brand logo can paint.
     if (pageReady && logoReady) {
-      const wait = Math.max(0, MIN_MS - (Date.now() - startRef.current));
+      const wait = Math.max(0, SHOW_MS - (Date.now() - iconShownAtRef.current));
       const t = window.setTimeout(beginLeave, wait);
       return () => {
         window.clearTimeout(cap);
@@ -85,13 +90,18 @@ export function PWASplashScreen() {
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#15803d] via-[#166534] to-[#0d2b1c] transition-opacity ease-out ${
         leaving ? 'opacity-0' : 'opacity-100'
       }`}
-      style={{ transitionDuration: '400ms' }}
+      style={{ transitionDuration: '600ms' }}
     >
       <style>{`
         @keyframes pwaSplashPop {
-          0% { opacity: 0; transform: scale(.82); }
-          60% { opacity: 1; transform: scale(1.04); }
+          0% { opacity: 0; transform: scale(.6) translateY(12px); }
+          55% { opacity: 1; transform: scale(1.08) translateY(0); }
+          75% { transform: scale(.97); }
           100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pwaSplashBreathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
         }
         @keyframes pwaSplashBar {
           0% { transform: translateX(-120%); }
@@ -103,22 +113,26 @@ export function PWASplashScreen() {
         }
       `}</style>
 
-      <div className="flex flex-col items-center gap-9">
+      <div className="flex flex-col items-center gap-7">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={SPLASH_ICON}
           alt=""
-          onLoad={() => setIconLoaded(true)}
-          onError={() => setIconLoaded(true)}
-          className="pwa-splash-logo h-32 w-32 rounded-[28px] shadow-2xl ring-1 ring-white/20"
-          // Pop in only once the image has actually decoded
-          style={iconLoaded ? { animation: 'pwaSplashPop .6s ease-out both' } : { opacity: 0 }}
+          onLoad={onIconReady}
+          onError={onIconReady}
+          className="pwa-splash-logo h-20 w-20 rounded-[20px] shadow-xl ring-1 ring-white/20"
+          // Pop in only once the image has actually decoded, then breathe gently
+          style={
+            iconLoaded
+              ? { animation: 'pwaSplashPop 1.2s cubic-bezier(.22,1,.36,1) both, pwaSplashBreathe 2.4s ease-in-out 1.2s infinite' }
+              : { opacity: 0 }
+          }
         />
 
-        <div className="h-1 w-24 overflow-hidden rounded-full bg-white/15">
+        <div className="h-1 w-16 overflow-hidden rounded-full bg-white/15">
           <div
             className="pwa-splash-bar h-full w-1/3 rounded-full"
-            style={{ background: '#ffffff', animation: 'pwaSplashBar 1.1s ease-in-out infinite' }}
+            style={{ background: '#ffffff', animation: 'pwaSplashBar 1.6s ease-in-out infinite' }}
           />
         </div>
       </div>
