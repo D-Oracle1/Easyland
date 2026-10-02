@@ -453,7 +453,8 @@ html[data-splash-done] .pwa-splash { display: none !important; }
 @keyframes pwa-splash-bar { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
 .pwa-splash-doodle { opacity: 0; animation: pwa-splash-doodle-in 1.2s ease-out 0.3s forwards; }
 /* starts still (matching Android's frame), then breathes gently */
-.pwa-splash-logo { animation: pwa-splash-breathe 2.6s ease-in-out 0.6s infinite; }
+@keyframes pwa-splash-shadow-in { from { box-shadow: 0 0 0 rgba(0,0,0,0); } to { box-shadow: 0 14px 34px rgba(13,43,28,0.22), 0 0 0 1px rgba(0,0,0,0.04); } }
+.pwa-splash-logo { animation: pwa-splash-shadow-in 0.8s ease-out 0.3s forwards, pwa-splash-breathe 2.6s ease-in-out 0.6s infinite; }
 .pwa-splash-barwrap { opacity: 0; animation: pwa-splash-fade-in 0.5s ease-out 0.8s forwards; }
 .pwa-splash-bar { animation: pwa-splash-bar 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
-import { MASKABLE_BG } from '@/lib/brand-colors';
+import { LAUNCH_BG, LAUNCH_TILE_RATIO, MASKABLE_BG } from '@/lib/brand-colors';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -17,11 +17,11 @@ const TO = '#0d2b1c';
  *   /api/app-icon?size=512            square tile (Apple touch icon)
  *   /api/app-icon?size=512&rounded=1  rounded tile (favicon, Android "any")
  *   /api/app-icon?size=512&maskable=1 extra padding for Android's adaptive mask
- *   …&splash=1                        launch-screen variant: Android draws the
- *                                     largest manifest icon on its launch screen at
- *                                     a fixed size, so this shrinks the visible
- *                                     logo (a small tile on transparency / a small
- *                                     logo on the maskable square)
+ *   …&splash=1                        launch-screen variant (the 512 icons): the small
+ *                                     rounded-square tile centred on white (maskable)
+ *                                     or transparency — Android shows the largest
+ *                                     icon on its launch screen, the 192s on the
+ *                                     home screen
  */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
@@ -55,12 +55,15 @@ export async function GET(req: NextRequest) {
   // Corners are only rounded on request (favicon/Android "any"); iOS rounds
   // touch icons itself and would show transparent corners as black.
   const rounded = url.searchParams.get('rounded') === '1' && !maskable;
-  // Splash (non-maskable): draw a smaller tile centred on transparency
-  const tile = splash && !maskable ? Math.round(size * 0.56) : size;
-  // Maskable: bold logo, still inside the 2/3 circle Android shows on its
-  // launch screen (radius 33%) and the 80% adaptive-icon safe zone.
-  const logoSize = Math.round(maskable ? size * 0.56 : tile * 0.64);
-  const radius = rounded || (splash && !maskable) ? Math.round(tile * 0.22) : 0;
+  // Launch-screen variant: the same rounded square tile as the in-app splash,
+  // one third of the canvas (so ~80dp on Android's 240dp launch icon), on white
+  // (maskable — Android's circle blends into the white launch background) or on
+  // transparency.
+  const tile = splash ? Math.round(size * LAUNCH_TILE_RATIO) : size;
+  // Home-screen maskable icon: bold logo on a solid square, inside the 80% safe zone.
+  const logoSize = Math.round(maskable && !splash ? size * 0.56 : tile * 0.64);
+  const radius = rounded || splash ? Math.round(tile * 0.22) : 0;
+  const tileBg = maskable && !splash ? MASKABLE_BG : `linear-gradient(145deg, ${FROM} 0%, #166534 45%, ${TO} 100%)`;
 
   const tileEl = (
       <div
@@ -70,9 +73,7 @@ export async function GET(req: NextRequest) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          // Maskable: solid colour, so our in-app splash can draw the identical
-          // circle Android shows on its launch screen (see lib/brand-colors).
-          background: maskable ? MASKABLE_BG : `linear-gradient(145deg, ${FROM} 0%, #166534 45%, ${TO} 100%)`,
+          background: tileBg,
           borderRadius: radius,
         }}
       >
@@ -89,7 +90,18 @@ export async function GET(req: NextRequest) {
 
   return new ImageResponse(
     tile === size ? tileEl : (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{tileEl}</div>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: maskable ? LAUNCH_BG : 'transparent',
+        }}
+      >
+        {tileEl}
+      </div>
     ),
     {
       width: size,
