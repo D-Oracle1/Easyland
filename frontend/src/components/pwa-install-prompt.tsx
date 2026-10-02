@@ -24,10 +24,16 @@ function snoozed(): boolean {
   }
 }
 
-function isIosSafari(): boolean {
+/**
+ * iOS has no install API — every browser installs via its Share menu (Safari
+ * always; Chrome, Edge and Firefox since iOS 16.4). Safari's Share button is in
+ * the bottom toolbar; the others put it in or beside the address bar.
+ */
+function iosBrowser(): 'safari' | 'other' | null {
   const ua = navigator.userAgent;
   const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  return ios && /safari/i.test(ua) && !/crios|fxios|edgios|opios/i.test(ua);
+  if (!ios) return null;
+  return /crios|fxios|edgios|opios/i.test(ua) ? 'other' : 'safari';
 }
 
 /**
@@ -40,7 +46,7 @@ export function PWAInstallPrompt() {
   const branding = useBranding();
   const name = getCompanyName(branding);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [ios, setIos] = useState(false);
+  const [ios, setIos] = useState<'safari' | 'other' | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -57,7 +63,8 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
-    if (isIosSafari()) { setIos(true); reveal(); }
+    const browser = iosBrowser();
+    if (browser) { setIos(browser); reveal(); }
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -113,7 +120,7 @@ export function PWAInstallPrompt() {
           <ol className="mt-3.5 space-y-2 rounded-2xl bg-gray-50 p-3 text-[13px] text-gray-700 dark:bg-gray-800/70 dark:text-gray-200">
             <li className="flex items-center gap-2">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white shadow-sm dark:bg-gray-900"><Share className="h-3.5 w-3.5 text-blue-500" /></span>
-              Tap <b>Share</b> in Safari&apos;s toolbar
+              {ios === 'safari' ? <>Tap <b>Share</b> in Safari&apos;s toolbar</> : <>Tap <b>Share</b> in the address bar</>}
             </li>
             <li className="flex items-center gap-2">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white shadow-sm dark:bg-gray-900"><SquarePlus className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" /></span>

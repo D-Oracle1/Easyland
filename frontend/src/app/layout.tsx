@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     ],
     shortcut: [{ url: '/api/app-icon?size=32&rounded=1&v=2' }],
     apple: [
-      { url: '/api/app-icon?size=180&v=2', sizes: '180x180', type: 'image/png' },
+      { url: '/api/app-icon?size=180&v=7', sizes: '180x180', type: 'image/png' },
     ],
   },
   other: {
