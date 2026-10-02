@@ -10,6 +10,8 @@
  * In regular browser, uses sessionStorage for tab isolation.
  */
 
+import { isInstalledApp } from './pwa';
+
 /** Where older versions stored the access token — purged on load and on login. */
 const LEGACY_TOKEN_KEY = 'token';
 const USER_KEY = 'user';
@@ -23,13 +25,8 @@ function purgeLegacyToken(): void {
 
 if (typeof window !== 'undefined') purgeLegacyToken();
 
-function isPwaStandalone(): boolean {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true
-  );
-}
+// Installed app (fullscreen / standalone): keep the profile across launches
+const isPwaStandalone = isInstalledApp;
 
 function getStorage(): Storage {
   return isPwaStandalone() ? localStorage : sessionStorage;

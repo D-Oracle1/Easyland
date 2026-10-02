@@ -425,5 +425,14 @@
 
 /* Public mobile tab bar (components/layout/mobile-bottom-nav.tsx) */
 @media (max-width: 767px) {
-  body.has-bottom-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  body.has-bottom-nav { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+}
+
+/* PWA install card (components/pwa-install-prompt.tsx): clear the tab bar on phones */
+.pwa-install-card { bottom: calc(16px + env(safe-area-inset-bottom)); }
+@media (max-width: 767px) {
+  body.has-bottom-nav .pwa-install-card { bottom: calc(92px + env(safe-area-inset-bottom)); }
+}
+@media (min-width: 768px) {
+  .pwa-install-card { bottom: 24px; }
 }

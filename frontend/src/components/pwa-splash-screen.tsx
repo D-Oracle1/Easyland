@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { isInstalledApp } from '@/lib/pwa';
 
 /** Same generated tile as the installed app icon and favicon (see /api/app-icon). */
 const SPLASH_ICON = '/api/app-icon?size=320&rounded=1&v=2';
@@ -27,11 +28,7 @@ export function PWASplashScreen() {
 
   // Decide whether to show the splash (installed PWA, once per app session).
   useEffect(() => {
-    const isStandalone =
-      window.matchMedia?.('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    if (!isStandalone || sessionStorage.getItem('pwa_splash_shown')) return;
+    if (!isInstalledApp() || sessionStorage.getItem('pwa_splash_shown')) return;
     sessionStorage.setItem('pwa_splash_shown', '1');
 
     setVisible(true);

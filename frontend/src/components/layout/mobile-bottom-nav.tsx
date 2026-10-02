@@ -44,12 +44,15 @@ export function MobileBottomNav() {
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href));
 
   return (
+    // Floating glass pill — full width (minus a small margin), full-size tabs
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 bg-white/95 shadow-[0_-6px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl md:hidden dark:border-gray-800 dark:bg-gray-950/95"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed inset-x-3 z-50 overflow-hidden rounded-[26px] border border-white/60 bg-white/65 shadow-[0_10px_40px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.04] backdrop-blur-2xl backdrop-saturate-150 md:hidden dark:border-white/10 dark:bg-gray-900/65"
+      style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
-      <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
+      {/* glass sheen */}
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/50 to-transparent dark:from-white/5" />
+      <ul className="relative mx-auto grid h-16 grid-cols-5">
         {items.map(({ href, label, icon: Icon }) => {
           const active = isActive(href);
           return (
@@ -57,15 +60,14 @@ export function MobileBottomNav() {
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                className="relative flex h-full flex-col items-center justify-center gap-1 transition-colors active:bg-gray-50 dark:active:bg-gray-900"
+                className="relative flex h-full flex-col items-center justify-center gap-1 transition-transform active:scale-95"
               >
-                {active && <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-green-700" />}
                 <span
                   className={cn(
                     'flex h-7 w-12 items-center justify-center rounded-full transition-colors',
                     active
-                      ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                      : 'text-gray-500 dark:text-gray-400',
+                      ? 'bg-green-700 text-white shadow-md shadow-green-900/25'
+                      : 'text-gray-600 dark:text-gray-300',
                   )}
                 >
                   <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.3 : 1.9} />
@@ -73,7 +75,7 @@ export function MobileBottomNav() {
                 <span
                   className={cn(
                     'text-[11px] font-medium leading-none',
-                    active ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400',
+                    active ? 'font-semibold text-green-800 dark:text-green-300' : 'text-gray-600 dark:text-gray-300',
                   )}
                 >
                   {label}

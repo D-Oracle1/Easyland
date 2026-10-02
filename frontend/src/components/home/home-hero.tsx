@@ -93,7 +93,8 @@ export function HomeHero({
   ];
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#07170f] pb-20 pt-24 md:pb-28 md:pt-32">
+    // Same green as the dashboard sidebar
+    <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary-800 to-brand-deep pb-20 pt-24 md:pb-28 md:pt-32">
       {/* Ambient light */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-32 top-10 h-[420px] w-[420px] rounded-full bg-emerald-500/25 blur-[120px]" />
@@ -116,7 +117,8 @@ export function HomeHero({
           <motion.h1 variants={fadeUp} initial="hidden" animate="show" custom={1}
             className="text-[2.25rem] font-extrabold leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-[4.1rem]">
             {heroTitle}{' '}
-            <span className="bg-gradient-to-r from-emerald-300 via-lime-200 to-amber-200 bg-clip-text text-transparent">
+            {/* The leaf's lime-to-green from the logo */}
+            <span className="bg-gradient-to-r from-[#b2dc55] via-[#96c942] to-[#7fc446] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(0,0,0,0.15)]">
               {heroTitleAccent}
             </span>
           </motion.h1>
@@ -187,7 +189,7 @@ export function HomeHero({
           className="relative order-first mx-auto w-full max-w-[560px] lg:order-none"
         >
           <div aria-hidden className="absolute -inset-4 -z-10 rounded-[2.75rem] bg-gradient-to-br from-emerald-400/30 via-transparent to-amber-300/20 blur-2xl" />
-          <div className="relative aspect-[5/4] overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5 shadow-2xl sm:aspect-[4/5] sm:rounded-[2.25rem]">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/15 bg-white/5 shadow-2xl sm:rounded-[2.25rem]">
             {images.map((src, i) => (
               <div key={src} className="absolute inset-0 transition-all duration-[1200ms] ease-out"
                 style={{ opacity: i === slide ? 1 : 0, transform: i === slide ? 'scale(1)' : 'scale(1.04)' }}>

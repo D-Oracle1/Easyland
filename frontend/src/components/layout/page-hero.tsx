@@ -29,23 +29,18 @@ export function PageHero({
   className?: string;
 }) {
   return (
-    <section className={cn('relative isolate overflow-hidden bg-[#07170f] px-4 pb-14 pt-28 md:pb-20 md:pt-36', className)}>
+    // Same green as the dashboard sidebar (primary → primary-800 → brand-deep)
+    <section className={cn('relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary-800 to-brand-deep px-4 pb-14 pt-28 md:pb-20 md:pt-36', className)}>
       {/* Background photo */}
       {image && (
         <div aria-hidden className="absolute inset-0 -z-20">
           <Image src={image} alt="" fill priority sizes="100vw" className="hero-kenburns object-cover opacity-45" />
         </div>
       )}
-      {/* Brand wash + ambient light */}
-      <div
-        aria-hidden
-        className={cn(
-          'absolute inset-0 -z-10',
-          image
-            ? 'bg-gradient-to-b from-[#07170f]/80 via-[#0d2b1c]/70 to-[#07170f]/95'
-            : 'bg-gradient-to-br from-[#0d2b1c] via-[#07170f] to-[#0b2416]',
-        )}
-      />
+      {/* Brand wash over the photo, in the sidebar green */}
+      {image && (
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/85 via-primary-800/80 to-brand-deep/90" />
+      )}
       <div aria-hidden className="pointer-events-none absolute -left-24 top-0 -z-10 h-80 w-80 rounded-full bg-emerald-500/25 blur-[110px]" />
       <div aria-hidden className="pointer-events-none absolute -right-16 bottom-0 -z-10 h-72 w-72 rounded-full bg-amber-400/15 blur-[110px]" />
       <FloatingBubbles className="-z-10" density={image ? 'light' : 'normal'} />

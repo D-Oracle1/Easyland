@@ -73,7 +73,10 @@ export async function GET(req: NextRequest) {
     description,
     start_url: '/',
     scope: '/',
-    display: 'standalone',
+    // Full screen: hides the phone's status and navigation bars. Browsers that
+    // can't do fullscreen for installed apps fall back to standalone.
+    display: 'fullscreen',
+    display_override: ['fullscreen', 'standalone'],
     orientation: 'portrait-primary',
     background_color: bgColor,
     theme_color: themeColor,
