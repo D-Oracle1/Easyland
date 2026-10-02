@@ -25,7 +25,7 @@ import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { api, getImageUrl } from '@/lib/api';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
 
@@ -157,7 +157,7 @@ export default function PropertyDetailPage() {
               </div>
 
               {(() => {
-                const token = getToken();
+                const token = hasSession();
                 const purchaseUrl = `/properties/${property.id}/purchase`;
                 const href = token
                   ? purchaseUrl

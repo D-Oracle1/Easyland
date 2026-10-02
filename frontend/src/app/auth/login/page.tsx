@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { setAuth, clearAuth, getToken, getUser } from '@/lib/auth-storage';
+import { setAuth, clearAuth, hasSession, getUser } from '@/lib/auth-storage';
 import { getImageUrl, setTenantId, apiUrl } from '@/lib/api';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
 import { BrandLogo } from '@/components/brand-logo';
@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   // If already authenticated, redirect to the appropriate dashboard immediately
   useEffect(() => {
-    const token = getToken();
+    const token = hasSession();
     const user = getUser();
     if (token && user) {
       const role = (user as any).role?.toLowerCase();
@@ -89,10 +89,9 @@ export default function LoginPage() {
     // Clear any stale auth data first
     clearAuth();
 
-    // Store token and user data
-    const token = payload?.accessToken;
+    // The session itself arrived as HttpOnly cookies; keep only the profile
     const user = payload?.user;
-    setAuth(token, user);
+    setAuth(user);
 
     const role = user?.role?.toLowerCase();
 
@@ -128,6 +127,7 @@ export default function LoginPage() {
       if (tid) headers['X-Company-ID'] = tid;
       const response = await fetch(apiUrl('/auth/2fa/login'), {
         method: 'POST',
+        credentials: 'include',
         headers,
         body: JSON.stringify(
           useRecovery
@@ -160,6 +160,7 @@ export default function LoginPage() {
 
       const response = await fetch(apiUrl('/auth/login'), {
         method: 'POST',
+        credentials: 'include',
         headers: loginHeaders,
         body: JSON.stringify({
           email: formData.email.toLowerCase().trim(),

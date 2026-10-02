@@ -17,8 +17,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import { getToken } from '@/lib/auth-storage';
+import { api, authFetch } from '@/lib/api';
+import { hasSession } from '@/lib/auth-storage';
 
 const _MASTER_API = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -28,17 +28,17 @@ function masterBase(): string {
 }
 
 async function masterGet(path: string) {
-  const res = await fetch(`${masterBase()}${path}`, {
-    headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+  const res = await authFetch(`${masterBase()}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error((await res.json())?.message || 'Request failed');
   return res.json();
 }
 
 async function masterPost(path: string, body: any) {
-  const res = await fetch(`${masterBase()}${path}`, {
+  const res = await authFetch(`${masterBase()}${path}`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error((await res.json())?.message || 'Request failed');

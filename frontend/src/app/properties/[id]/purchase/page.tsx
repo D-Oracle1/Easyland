@@ -14,11 +14,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { getToken, getUser } from '@/lib/auth-storage';
-import { api } from '@/lib/api';
+import { hasSession, getUser } from '@/lib/auth-storage';
+import { api, authFetch } from '@/lib/api';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
 function formatPrice(price: number): string {
   if (price >= 1_000_000_000) return `₦${(price / 1_000_000_000).toFixed(2)}B`;
@@ -58,7 +57,7 @@ export default function PurchasePage() {
 
   // Auth guard
   useEffect(() => {
-    const token = getToken();
+    const token = hasSession();
     if (!token) {
       router.replace(`/auth/login?redirect=${encodeURIComponent(`/properties/${propertyId}/purchase`)}`);
     }
@@ -96,12 +95,11 @@ export default function PurchasePage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/purchases`, {
+      const token = hasSession();
+      const res = await authFetch(`/api/v1/purchases`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ ...form, propertyId }),
       });
@@ -121,10 +119,9 @@ export default function PurchasePage() {
   const handlePaymentConfirm = async () => {
     setConfirming(true);
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/purchases/${enquiryId}/payment`, {
+      const token = hasSession();
+      const res = await authFetch(`/api/v1/purchases/${enquiryId}/payment`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to confirm');

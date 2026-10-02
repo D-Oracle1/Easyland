@@ -483,7 +483,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: this.configService.get<string>('jwt.expiresIn', '7d'),
+      expiresIn: this.configService.get<string>('jwt.expiresIn', '15m'),
     };
   }
 
@@ -499,28 +499,55 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload);
+    // SUPER_ADMIN has no refresh-token table (master DB), so use a signed,
+    // purpose-bound refresh token instead; refreshTokens() re-checks the admin.
+    const refreshDays = parseInt(this.configService.get<string>('jwt.refreshExpiresIn', '30d'), 10) || 30;
 
     return {
       accessToken,
-      refreshToken: uuidv4(), // SUPER_ADMIN doesn't use refresh token table in tenant DB
-      expiresIn: this.configService.get<string>('jwt.expiresIn', '7d'),
+      refreshToken: this.jwtService.sign({ sub: admin.id, purpose: 'sa-refresh' }, { expiresIn: `${refreshDays}d` }),
+      expiresIn: this.configService.get<string>('jwt.expiresIn', '15m'),
     };
   }
 
   async refreshTokens(refreshToken: string, companyId?: string | null) {
+    // SUPER_ADMIN: signed refresh token (see generateSuperAdminTokens)
+    if (refreshToken.split('.').length === 3) {
+      let payload: { sub: string; purpose?: string };
+      try {
+        payload = this.jwtService.verify(refreshToken);
+      } catch {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+      if (payload.purpose !== 'sa-refresh') throw new UnauthorizedException('Invalid refresh token');
+      const admin = await this.masterPrisma.superAdmin.findUnique({ where: { id: payload.sub } }).catch(() => null);
+      if (!admin) throw new UnauthorizedException('Invalid refresh token');
+      return this.generateSuperAdminTokens(admin);
+    }
+
     const storedToken = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
       include: { user: true },
     });
 
-    if (!storedToken || storedToken.expiresAt < new Date()) {
+    const now = new Date();
+    if (!storedToken || storedToken.expiresAt < now) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
+    if (storedToken.user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Account is not active');
+    }
 
-    // Delete old refresh token
-    await this.prisma.refreshToken.delete({
-      where: { id: storedToken.id },
-    });
+    // Rotate: the old token stays valid for a short grace period so two tabs
+    // refreshing at the same moment don't log each other out.
+    const graceEnd = new Date(now.getTime() + 60_000);
+    if (storedToken.expiresAt > graceEnd) {
+      await this.prisma.refreshToken.update({ where: { id: storedToken.id }, data: { expiresAt: graceEnd } });
+    }
+    // Housekeeping: drop this user's expired tokens
+    await this.prisma.refreshToken
+      .deleteMany({ where: { userId: storedToken.userId, expiresAt: { lt: now } } })
+      .catch(() => undefined);
 
     // Generate new tokens — keep the tenant so the new access token still
     // resolves to the right company DB (it was previously dropped here).

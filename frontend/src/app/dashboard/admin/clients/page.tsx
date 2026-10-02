@@ -48,8 +48,8 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import { getToken } from '@/lib/auth-storage';
+import { api, authFetch } from '@/lib/api';
+import { hasSession } from '@/lib/auth-storage';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
@@ -355,9 +355,7 @@ export default function ClientsPage() {
 
   const handleDownloadClientTemplate = async () => {
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${base}/api/v1/clients/import-template`, {
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
+      const res = await authFetch(`/api/v1/clients/import-template`, {
       });
       if (!res.ok) throw new Error('Failed to download template');
       const blob = await res.blob();
@@ -377,12 +375,10 @@ export default function ClientsPage() {
     setImporting(true);
     setImportResults(null);
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const form = new FormData();
       form.append('file', importFile);
-      const res = await fetch(`${base}/api/v1/clients/bulk-import`, {
+      const res = await authFetch(`/api/v1/clients/bulk-import`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: form,
       });
       const data = await res.json();

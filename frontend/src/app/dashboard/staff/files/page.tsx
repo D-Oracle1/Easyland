@@ -41,8 +41,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { api } from '@/lib/api';
-import { getToken, getUser } from '@/lib/auth-storage';
+import { api, authFetch } from '@/lib/api';
+import { hasSession, getUser } from '@/lib/auth-storage';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/dashboard/page-header';
 
@@ -186,10 +186,9 @@ export default function FilesPage() {
       selectedFiles.forEach((f) => formData.append('files', f));
       if (uploadIsPublic) formData.append('isPublic', 'true');
 
-      const token = getToken();
-      const response = await fetch(`${api.baseUrl}/shared-files/upload`, {
+      const token = hasSession();
+      const response = await authFetch(`${api.baseUrl}/shared-files/upload`, {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
 

@@ -23,10 +23,7 @@ import { MailService } from '../../common/services/mail.service';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const rawExpiry =
-          configService.get<string>('jwt.expiresIn') ||
-          process.env.JWT_EXPIRES_IN ||
-          '7d';
+        const rawExpiry = configService.get<string>('jwt.expiresIn') || '15m';
 
         // jsonwebtoken accepts a plain integer (seconds) or an ms-style string like
         // "7d", "24h", "30m", "60s". Anything else (e.g. "undefined", "null",
@@ -34,7 +31,7 @@ import { MailService } from '../../common/services/mail.service';
         const isValidExpiry = (v: string) =>
           /^\d+$/.test(v) || /^\d+\s*(s|m|h|d|w|y)$/i.test(v);
 
-        const expiresIn = isValidExpiry(rawExpiry) ? rawExpiry : '7d';
+        const expiresIn = isValidExpiry(rawExpiry) ? rawExpiry : '15m';
 
         return {
           secret: configService.get<string>('jwt.secret') || process.env.JWT_SECRET || 'rms-secret',

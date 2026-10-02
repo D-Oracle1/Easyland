@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
-import { getToken, getUser } from '@/lib/auth-storage';
+import { hasSession, getUser } from '@/lib/auth-storage';
 import { loadChatStorage, saveChatStorage } from '@/lib/chat-storage';
 import { usePusher } from './pusher-context';
 import { playChatMessageSound } from '@/lib/notification-sounds';
@@ -102,8 +102,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // ── Initial hydration from localStorage ──────────────────────────────────
   useEffect(() => {
     const userId = getUser()?.id;
-    const token = getToken();
-    if (!userId || !token || token === 'demo-token') return;
+    const token = hasSession();
+    if (!userId || !token) return;
 
     // 1. Instantly render from localStorage (zero network latency)
     const stored = loadChatStorage(userId);
@@ -123,8 +123,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // ── Fetch rooms ──────────────────────────────────────────────────────────
   const fetchRooms = useCallback(async () => {
-    const token = getToken();
-    if (!token || token === 'demo-token') return;
+    const token = hasSession();
+    if (!token) return;
 
     setIsLoadingRooms(true);
     try {

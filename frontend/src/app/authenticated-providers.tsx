@@ -8,7 +8,7 @@ import { ChatProvider } from '@/contexts/chat-context';
 import { CallProvider } from '@/contexts/call-context';
 import { requestNotificationPermission } from '@/lib/push-notifications';
 import { api } from '@/lib/api';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 
 const IncomingCallModal = dynamic(
   () => import('@/components/call/incoming-call-modal').then((m) => m.IncomingCallModal),
@@ -50,8 +50,8 @@ function PushNotificationSetup() {
  */
 function KeepAlive() {
   useEffect(() => {
-    const token = getToken();
-    if (!token || token === 'demo-token') return;
+    const token = hasSession();
+    if (!token) return;
 
     const ping = () => api.get('/health').catch(() => {});
     // First ping after 60 s (let the app settle), then every 4 min

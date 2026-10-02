@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { createClient, RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import { getToken, getUser } from '@/lib/auth-storage';
+import { hasSession, getUser } from '@/lib/auth-storage';
 
 const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
 const SUPABASE_ANON_KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
@@ -43,10 +43,10 @@ export function PusherProvider({ children }: { children: React.ReactNode }) {
   const channelFailuresRef = useRef<Map<string, number>>(new Map());
 
   const initRealtime = useCallback(() => {
-    const token = getToken();
+    const token = hasSession();
     const user = getUser();
 
-    if (!token || token === 'demo-token' || !user) {
+    if (!token || !user) {
       log('Skipping init: no auth', { hasToken: !!token, hasUser: !!user });
       return;
     }

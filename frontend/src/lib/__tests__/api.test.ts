@@ -1,100 +1,75 @@
-import { api, getImageUrl } from '../api';
+import { api, getImageUrl, authFetch } from '../api';
 
-// Mock auth-storage
 jest.mock('../auth-storage', () => ({
-  getToken: jest.fn(),
+  clearAuth: jest.fn(),
 }));
 
-const { getToken } = require('../auth-storage');
+const fetchMock = jest.fn();
+global.fetch = fetchMock as any;
 
-// Mock global fetch
-global.fetch = jest.fn();
+const ok = (data: unknown = { data: 'test' }) => ({ ok: true, status: 200, json: async () => data });
+const unauthorized = () => ({ ok: false, status: 401, json: async () => ({ message: 'Unauthorized' }) });
+const urlOf = (call: any[]) => String(call[0]);
 
-describe('API Client', () => {
+describe('API Client (cookie session)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: 'test' }),
-    });
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(ok());
   });
 
-  describe('getHeaders', () => {
-    it('should include Authorization header when token exists', () => {
-      getToken.mockReturnValue('test-token-123');
-
-      const headers = api.getHeaders();
-
-      expect(headers).toEqual(
-        expect.objectContaining({
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer test-token-123',
-        }),
-      );
-    });
-
-    it('should not include Authorization header when no token', () => {
-      getToken.mockReturnValue(null);
-
-      const headers = api.getHeaders();
-
-      expect(headers).toEqual({
-        'Content-Type': 'application/json',
-      });
-      expect(headers).not.toHaveProperty('Authorization');
-    });
+  it('never sends an Authorization header — the session travels in HttpOnly cookies', async () => {
+    await api.get('/properties');
+    const init = fetchMock.mock.calls[0][1];
+    expect(new Headers(init.headers).has('Authorization')).toBe(false);
+    expect(init.credentials).toBe('include');
+    expect(api.getHeaders()).not.toHaveProperty('Authorization');
   });
 
-  describe('get', () => {
-    it('should make GET request with correct URL', async () => {
-      getToken.mockReturnValue(null);
-
-      await api.get('/properties');
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/properties'),
-        expect.objectContaining({ method: 'GET' }),
-      );
-    });
-
-    it('should throw on non-ok response', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        json: async () => ({ message: 'Not found' }),
-      });
-
-      await expect(api.get('/nonexistent')).rejects.toThrow('Not found');
-    });
+  it('makes a GET request to the API path', async () => {
+    await api.get('/properties');
+    expect(urlOf(fetchMock.mock.calls[0])).toContain('/api/v1/properties');
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ method: 'GET' }));
   });
 
-  describe('post', () => {
-    it('should make POST request with body', async () => {
-      getToken.mockReturnValue('token');
-      const body = { title: 'Test Property' };
-
-      await api.post('/properties', body);
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/properties'),
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify(body),
-        }),
-      );
-    });
+  it('sends a JSON body on POST', async () => {
+    await api.post('/sales', { amount: 5 });
+    const init = fetchMock.mock.calls[0][1];
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(JSON.stringify({ amount: 5 }));
+    expect(new Headers(init.headers).get('Content-Type')).toBe('application/json');
   });
 
-  describe('delete', () => {
-    it('should make DELETE request', async () => {
-      getToken.mockReturnValue('token');
+  it('throws the server message on a non-ok response', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ message: 'Bad thing' }) });
+    await expect(api.get('/x')).rejects.toThrow('Bad thing');
+  });
 
-      await api.delete('/properties/123');
+  it('renews an expired session once and retries the request', async () => {
+    fetchMock
+      .mockResolvedValueOnce(unauthorized()) // original request
+      .mockResolvedValueOnce(ok({})) // POST /auth/refresh
+      .mockResolvedValueOnce(ok({ data: 'fresh' })); // retry
+    await expect(api.get('/sales')).resolves.toEqual({ data: 'fresh' });
+    expect(urlOf(fetchMock.mock.calls[1])).toContain('/api/v1/auth/refresh');
+    expect(urlOf(fetchMock.mock.calls[2])).toContain('/api/v1/sales');
+  });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/properties/123'),
-        expect.objectContaining({ method: 'DELETE' }),
-      );
+  it('shares one refresh between concurrent requests', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes('/auth/refresh')) return ok({});
+      const n = fetchMock.mock.calls.filter((c) => urlOf(c) === url).length;
+      return n === 1 ? unauthorized() : ok();
     });
+    await Promise.all([api.get('/a'), api.get('/b'), api.get('/c')]);
+    const refreshes = fetchMock.mock.calls.filter((c) => urlOf(c).includes('/auth/refresh'));
+    expect(refreshes).toHaveLength(1);
+  });
+
+  it('does not try to refresh on auth endpoints (wrong password is a plain 401)', async () => {
+    fetchMock.mockResolvedValueOnce(unauthorized());
+    const res = await authFetch('/auth/2fa/login', { method: 'POST' });
+    expect(res.status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 

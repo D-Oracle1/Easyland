@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatCurrency, formatArea, type AreaUnit, AREA_UNITS, toSqm, fromSqm } from '@/lib/utils';
 import { api, getImageUrl } from '@/lib/api';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { AreaUnitSelect } from '@/components/area-unit-select';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/dashboard/page-header';
@@ -139,7 +139,7 @@ export default function PropertiesPage() {
   }, []);
 
   const fetchProperties = async () => {
-    const token = getToken();
+    const token = hasSession();
     if (!token) {
       setIsLoading(false);
       return;

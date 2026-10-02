@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/dialog';
 import { Receipt, ReceiptData } from './Receipt';
 import { toast } from 'sonner';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
+import { authFetch } from '@/lib/api';
 
 interface ReceiptModalProps {
   open: boolean;
@@ -163,11 +164,10 @@ export function ReceiptModal({ open, onClose, data, branding }: ReceiptModalProp
 
     try {
       // In a real implementation, this would call the backend API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/receipts/send`, {
+      const response = await authFetch(`/api/v1/receipts/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify({
           receiptData: data,

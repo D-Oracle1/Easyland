@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -89,7 +89,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
-      throw new UnauthorizedException('Failed to validate super admin');
+      throw new ServiceUnavailableException('Could not verify your session right now, please retry');
     }
   }
 
@@ -142,7 +142,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if ((error as any)?.message?.includes('inactive')) {
         throw new UnauthorizedException('Company account has been suspended');
       }
-      throw new UnauthorizedException('Failed to validate user');
+      // A database hiccup is not an auth failure: answering 401 here would make
+      // the browser drop a perfectly valid session. Report it as temporary.
+      throw new ServiceUnavailableException('Could not verify your session right now, please retry');
     }
   }
 }

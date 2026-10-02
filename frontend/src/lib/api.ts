@@ -1,4 +1,4 @@
-import { getToken, clearAuth } from './auth-storage';
+import { clearAuth } from './auth-storage';
 
 function handleUnauthorized() {
   if (typeof window === 'undefined') return;
@@ -65,106 +65,107 @@ export function apiUrl(path: string): string {
   return `${getApiBaseUrl()}${path}`;
 }
 
+// -- Session --
+// The browser session lives only in HttpOnly cookies: a short-lived access
+// cookie plus a refresh cookie scoped to /api/v1/auth. JS never sees a token.
+// When a request comes back 401 we renew the session once and retry.
+
+let refreshing: Promise<boolean> | null = null;
+
+/** Renew the access cookie using the refresh cookie. Concurrent callers share one request. */
+export function refreshSession(): Promise<boolean> {
+  if (!refreshing) {
+    refreshing = fetch(apiUrl('/auth/refresh'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(_tenantId ? { 'X-Company-ID': _tenantId } : {}) },
+      body: '{}',
+    })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .finally(() => {
+        // Requests that failed while this was in flight share its result;
+        // anything later starts a fresh attempt.
+        refreshing = null;
+      });
+  }
+  return refreshing;
+}
+
+function withSessionHeaders(init: RequestInit = {}): RequestInit {
+  const headers = new Headers(init.headers);
+  if (_tenantId && !headers.has('X-Company-ID')) headers.set('X-Company-ID', _tenantId);
+  return { ...init, headers, credentials: 'include' };
+}
+
+/**
+ * fetch() for authenticated API calls. `input` is an API path ('/sales') or a
+ * full URL. Sends the session cookie, renews an expired session once, and
+ * sends the user to the login page if the session is really over.
+ */
+export async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const url = /^https?:\/\//.test(input) || input.startsWith('/api/') ? input : apiUrl(input);
+  let response = await fetch(url, withSessionHeaders(init));
+  // Auth endpoints report wrong passwords etc. with 401 — never refresh for those
+  if (response.status === 401 && !/\/auth\//.test(url)) {
+    if (await refreshSession()) {
+      response = await fetch(url, withSessionHeaders(init));
+    }
+    if (response.status === 401) handleUnauthorized();
+  }
+  return response;
+}
+
+async function parse<T>(response: Response, fallback: string): Promise<T> {
+  if (response.status === 401) throw new Error('Unauthorized');
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: fallback }));
+    throw new Error(error.message || fallback);
+  }
+  return response.json();
+}
+
+function jsonRequest(method: string, data?: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: data !== undefined ? JSON.stringify(data) : undefined,
+  };
+}
+
 export const api = {
   get baseUrl() { return getApiBaseUrl(); },
 
+  /** Headers for a JSON request. Auth travels in the HttpOnly cookie, not here. */
   getHeaders(): HeadersInit {
-    const token = getToken();
     return {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(_tenantId ? { 'X-Company-ID': _tenantId } : {}),
-    };
-  },
-
-  getAuthHeaders(): HeadersInit {
-    const token = getToken();
-    return {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(_tenantId ? { 'X-Company-ID': _tenantId } : {}),
     };
   },
 
   async get<T = any>(endpoint: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-    return response.json();
+    return parse<T>(await authFetch(endpoint, { method: 'GET' }), 'Request failed');
   },
 
   async post<T = any>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
-    });
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-    return response.json();
+    return parse<T>(await authFetch(endpoint, jsonRequest('POST', data || undefined)), 'Request failed');
   },
 
   async put<T = any>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'PUT',
-      headers: this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
-    });
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-    return response.json();
+    return parse<T>(await authFetch(endpoint, jsonRequest('PUT', data || undefined)), 'Request failed');
   },
 
   async patch<T = any>(endpoint: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
-    });
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-    return response.json();
+    return parse<T>(await authFetch(endpoint, jsonRequest('PATCH', data || undefined)), 'Request failed');
   },
 
   async delete<T = any>(endpoint: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'DELETE',
-      headers: this.getHeaders(),
-    });
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-    return response.json();
+    return parse<T>(await authFetch(endpoint, { method: 'DELETE' }), 'Request failed');
   },
 
   async postForm<T = any>(endpoint: string, formData: FormData): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: formData,
-    });
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Request failed');
-    }
-    return response.json();
+    return parse<T>(await authFetch(endpoint, { method: 'POST', body: formData }), 'Request failed');
   },
 
   async uploadFiles(endpoint: string, files: File[], fieldName = 'files'): Promise<string[]> {
@@ -172,20 +173,7 @@ export const api = {
     files.forEach((file) => {
       formData.append(fieldName, file);
     });
-
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: formData,
-    });
-
-    if (response.status === 401) { handleUnauthorized(); throw new Error('Unauthorized'); }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(error.message || 'Upload failed');
-    }
-
-    const result = await response.json();
+    const result: any = await parse(await authFetch(endpoint, { method: 'POST', body: formData }), 'Upload failed');
     // Unwrap TransformInterceptor { success, data: { urls }, timestamp }
     const inner = result?.data || result;
     return inner?.urls || inner;

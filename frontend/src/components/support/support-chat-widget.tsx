@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { MessageCircle, X, Send, Loader2, LogIn, UserPlus, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { getToken, getUser } from '@/lib/auth-storage';
+import { hasSession, getUser } from '@/lib/auth-storage';
 import { api } from '@/lib/api';
 import { useBranding } from '@/hooks/use-branding';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ export function SupportChatWidget() {
   // Check auth state
   useEffect(() => {
     const checkAuth = () => {
-      const token = getToken();
+      const token = hasSession();
       const user = getUser();
       setIsLoggedIn(!!token && !!user);
       if (user?.id) setUserId(user.id);

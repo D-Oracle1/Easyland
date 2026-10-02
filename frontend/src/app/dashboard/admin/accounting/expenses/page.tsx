@@ -9,12 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api, authFetch } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { PageHeader } from '@/components/dashboard/page-header';
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
 const PAYMENT_METHODS = ['CASH', 'BANK_TRANSFER', 'CARD', 'CHEQUE', 'OTHER'];
 const STATUS_COLORS: Record<string, string> = {
@@ -170,10 +169,9 @@ export default function ExpensesPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const token = getToken();
-      const res = await fetch(`${API_BASE_URL}/api/v1/upload/file`, {
+      const token = hasSession();
+      const res = await authFetch(`/api/v1/upload/file`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       if (!res.ok) throw new Error('Upload failed');

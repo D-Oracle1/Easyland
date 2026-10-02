@@ -8,8 +8,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { api, getImageUrl } from '@/lib/api';
-import { getUser, updateUser, getToken } from '@/lib/auth-storage';
+import { api, getImageUrl, authFetch } from '@/lib/api';
+import { getUser, updateUser, hasSession } from '@/lib/auth-storage';
 import { invalidatePlatformBranding, usePlatformBranding } from '@/hooks/use-platform-branding';
 
 type Tab = 'profile' | 'branding' | 'cms' | 'security';
@@ -101,10 +101,8 @@ export default function SuperAdminSettings() {
     try {
       const form = new FormData();
       form.append('avatar', file);
-      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
-      const res = await fetch(`${API_BASE}/api/v1/upload/avatar`, {
+      const res = await authFetch(`/api/v1/upload/avatar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
         body: form,
       });
       if (!res.ok) throw new Error('Upload failed');
@@ -166,10 +164,8 @@ export default function SuperAdminSettings() {
     try {
       const form = new FormData();
       form.append('logo', file);
-      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
-      const res = await fetch(`${API_BASE}/api/v1/upload/company-logo`, {
+      const res = await authFetch(`/api/v1/upload/company-logo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
         body: form,
       });
       if (!res.ok) throw new Error('Upload failed');
@@ -191,10 +187,8 @@ export default function SuperAdminSettings() {
     try {
       const form = new FormData();
       form.append('logo', file);
-      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
-      const res = await fetch(`${API_BASE}/api/v1/upload/company-logo`, {
+      const res = await authFetch(`/api/v1/upload/company-logo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
         body: form,
       });
       if (!res.ok) throw new Error('Upload failed');

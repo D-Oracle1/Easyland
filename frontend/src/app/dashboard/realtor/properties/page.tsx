@@ -39,7 +39,7 @@ import { api, getImageUrl } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { AreaUnitSelect } from '@/components/area-unit-select';
 import { toast } from 'sonner';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 const getStatusBadge = (status: string) => {
@@ -122,7 +122,7 @@ export default function RealtorPropertiesPage() {
   }, []);
 
   const fetchProperties = async () => {
-    const token = getToken();
+    const token = hasSession();
     if (!token) {
       setIsLoading(false);
       return;
@@ -141,7 +141,7 @@ export default function RealtorPropertiesPage() {
   };
 
   const fetchSales = async () => {
-    const token = getToken();
+    const token = hasSession();
     if (!token) {
       setSalesLoading(false);
       return;

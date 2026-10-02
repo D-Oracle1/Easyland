@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { toast } from 'sonner';
 import { usePusher } from './pusher-context';
 import { playNotificationSound, playCalloutSound, playCalloutResponseSound } from '@/lib/notification-sounds';
@@ -72,7 +72,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [showCalloutModal, setShowCalloutModal] = useState(false);
   const mountedRef = useRef(true);
 
-  const isDemo = () => getToken() === 'demo-token';
+  const isDemo = () => false;
 
   // Clear PWA badge
   const clearBadge = useCallback(() => {
@@ -89,7 +89,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const fetchNotifications = useCallback(async () => {
-    const token = getToken();
+    const token = hasSession();
     if (!token || isDemo()) return;
 
     setIsLoading(true);
@@ -107,7 +107,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const markAsRead = useCallback(async (id: string) => {
-    const token = getToken();
+    const token = hasSession();
     if (!token || isDemo()) {
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n)));
       setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -124,7 +124,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const markAllAsRead = useCallback(async () => {
-    const token = getToken();
+    const token = hasSession();
     if (!token || isDemo()) {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, readAt: new Date().toISOString() })));
       setUnreadCount(0);
@@ -143,7 +143,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [clearBadge]);
 
   const deleteNotification = useCallback(async (id: string) => {
-    const token = getToken();
+    const token = hasSession();
     const notification = notifications.find((n) => n.id === id);
 
     if (!token || isDemo()) {

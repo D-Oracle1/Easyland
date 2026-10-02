@@ -35,7 +35,7 @@ import { api, getImageUrl } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
 import { AreaUnitSelect } from '@/components/area-unit-select';
 import { toast } from 'sonner';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
 const getStatusBadge = (status: string) => {
@@ -125,7 +125,7 @@ export default function StaffSalesPage() {
   }, []);
 
   const fetchProperties = async () => {
-    if (!getToken()) { setIsLoading(false); return; }
+    if (!hasSession()) { setIsLoading(false); return; }
     try {
       setIsLoading(true);
       const response: any = await api.get('/properties?limit=100');
@@ -139,7 +139,7 @@ export default function StaffSalesPage() {
   };
 
   const fetchSales = async () => {
-    if (!getToken()) { setSalesLoading(false); return; }
+    if (!hasSession()) { setSalesLoading(false); return; }
     try {
       setSalesLoading(true);
       const response: any = await api.get('/sales?limit=20');

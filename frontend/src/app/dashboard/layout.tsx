@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken, getUser } from '@/lib/auth-storage';
+import { hasSession, getUser } from '@/lib/auth-storage';
 import { Loader2 } from 'lucide-react';
 import { AuthenticatedProviders } from '../authenticated-providers';
 import { LevelUpCelebration } from '@/components/tier/level-up-celebration';
@@ -16,7 +16,7 @@ export default function DashboardLayout({
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
+    const token = hasSession();
     const user = getUser();
 
     if (!token || !user) {

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { MasterPrismaService } from '../../database/master-prisma.service';
@@ -26,7 +27,9 @@ describe('AuthService', () => {
     },
     refreshToken: {
       create: jest.fn(),
-      deleteMany: jest.fn(),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      findUnique: jest.fn(),
+      update: jest.fn(),
     },
     passwordResetToken: {
       create: jest.fn(),
@@ -67,6 +70,7 @@ describe('AuthService', () => {
 
   const mockMasterPrisma = {
     getClient: jest.fn().mockReturnValue(mockPrisma),
+    superAdmin: { findUnique: jest.fn() },
   };
 
   const mockTenantPrisma = {
@@ -184,6 +188,44 @@ describe('AuthService', () => {
       const res: any = await service.completeTwoFactorLogin('challenge', '123456');
       expect(res.accessToken).toBe('mock-token');
       expect(res.user.password).toBeUndefined();
+    });
+  });
+
+  describe('refreshTokens', () => {
+    const future = () => new Date(Date.now() + 10 * 86_400_000);
+
+    it('rotates: issues new tokens and leaves the old one only a short grace period', async () => {
+      mockPrisma.refreshToken.findUnique.mockResolvedValueOnce({
+        id: 'rt1', userId: 'u1', expiresAt: future(), user: { id: 'u1', email: 'a@b.c', role: 'ADMIN', status: 'ACTIVE' },
+      });
+      mockPrisma.refreshToken.create.mockResolvedValueOnce({});
+      const res = await service.refreshTokens('old-uuid', 'co1');
+      expect(res.accessToken).toBe('mock-token');
+      const graceEnd = mockPrisma.refreshToken.update.mock.calls[0][0].data.expiresAt as Date;
+      expect(graceEnd.getTime() - Date.now()).toBeLessThanOrEqual(60_000);
+      expect(mockPrisma.refreshToken.create).toHaveBeenCalled();
+    });
+
+    it('rejects expired, unknown or inactive-user tokens', async () => {
+      mockPrisma.refreshToken.findUnique.mockResolvedValueOnce(null);
+      await expect(service.refreshTokens('nope')).rejects.toThrow(UnauthorizedException);
+      mockPrisma.refreshToken.findUnique.mockResolvedValueOnce({ id: 'x', expiresAt: new Date(Date.now() - 1000), user: { status: 'ACTIVE' } });
+      await expect(service.refreshTokens('old')).rejects.toThrow(UnauthorizedException);
+      mockPrisma.refreshToken.findUnique.mockResolvedValueOnce({ id: 'x', expiresAt: future(), user: { status: 'SUSPENDED' } });
+      await expect(service.refreshTokens('sus')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('refreshes a super admin via the signed refresh token', async () => {
+      mockJwtService.verify.mockReturnValueOnce({ sub: 'sa1', purpose: 'sa-refresh' });
+      mockMasterPrisma.superAdmin.findUnique.mockResolvedValueOnce({ id: 'sa1', email: 'sa@x.y' });
+      const res = await service.refreshTokens('a.b.c');
+      expect(res.accessToken).toBe('mock-token');
+      expect(mockPrisma.refreshToken.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('refuses a signed token minted for another purpose (e.g. a 2FA challenge)', async () => {
+      mockJwtService.verify.mockReturnValueOnce({ sub: 'u1', purpose: '2fa-login' });
+      await expect(service.refreshTokens('a.b.c')).rejects.toThrow(UnauthorizedException);
     });
   });
 

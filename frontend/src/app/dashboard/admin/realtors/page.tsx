@@ -47,8 +47,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatCurrency, getTierBgClass } from '@/lib/utils';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
-import { getToken } from '@/lib/auth-storage';
+import { api, authFetch } from '@/lib/api';
+import { hasSession } from '@/lib/auth-storage';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
 
@@ -324,9 +324,7 @@ export default function RealtorsPage() {
 
   const handleDownloadRealtorTemplate = async () => {
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${base}/api/v1/realtors/import-template`, {
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
+      const res = await authFetch(`/api/v1/realtors/import-template`, {
       });
       if (!res.ok) throw new Error('Failed to download template');
       const blob = await res.blob();
@@ -346,12 +344,10 @@ export default function RealtorsPage() {
     setImporting(true);
     setImportResults(null);
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const form = new FormData();
       form.append('file', importFile);
-      const res = await fetch(`${base}/api/v1/realtors/bulk-import`, {
+      const res = await authFetch(`/api/v1/realtors/bulk-import`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: form,
       });
       const data = await res.json();

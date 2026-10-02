@@ -21,8 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { api, getImageUrl } from '@/lib/api';
-import { getUser, getToken, updateUser } from '@/lib/auth-storage';
+import { api, getImageUrl, authFetch } from '@/lib/api';
+import { getUser, hasSession, updateUser } from '@/lib/auth-storage';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { SecuritySettings } from '@/components/security-settings';
@@ -133,11 +133,10 @@ export default function ClientSettingsPage() {
       const formData = new FormData();
       formData.append('avatar', file);
 
-      const token = getToken();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/upload/avatar`, {
+      const token = hasSession();
+      const response = await authFetch(`/api/v1/upload/avatar`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });

@@ -1,13 +1,27 @@
 /**
  * Auth storage utilities.
  *
+ * The session itself lives in HttpOnly cookies set by the backend — tokens are
+ * never stored where JavaScript can read them. Only the (non-secret) profile of
+ * the signed-in user is kept here, for rendering and role-based routing.
+ *
  * In PWA standalone mode (iOS/Android home screen), uses localStorage
- * so auth persists across app launches.
+ * so the profile persists across app launches.
  * In regular browser, uses sessionStorage for tab isolation.
  */
 
-const TOKEN_KEY = 'token';
+/** Where older versions stored the access token — purged on load and on login. */
+const LEGACY_TOKEN_KEY = 'token';
 const USER_KEY = 'user';
+
+function purgeLegacyToken(): void {
+  try {
+    sessionStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {}
+}
+
+if (typeof window !== 'undefined') purgeLegacyToken();
 
 function isPwaStandalone(): boolean {
   if (typeof window === 'undefined') return false;
@@ -21,11 +35,12 @@ function getStorage(): Storage {
   return isPwaStandalone() ? localStorage : sessionStorage;
 }
 
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  const storage = getStorage();
-  // Also check the other storage as fallback (user might have switched modes)
-  return storage.getItem(TOKEN_KEY) || (isPwaStandalone() ? sessionStorage.getItem(TOKEN_KEY) : localStorage.getItem(TOKEN_KEY));
+/**
+ * True when a user has signed in on this device. The server is the real judge:
+ * if the session cookie has gone, the next API call renews it or redirects to login.
+ */
+export function hasSession(): boolean {
+  return getUser() !== null;
 }
 
 export function getUser(): { id: string; firstName: string; lastName: string; email: string; role: string; avatar?: string; companyId?: string; isSuperAdmin?: boolean; referralCode?: string; branchId?: string | null } | null {
@@ -43,13 +58,13 @@ export function getUser(): { id: string; firstName: string; lastName: string; em
   }
 }
 
-export function setAuth(token: string, user: Record<string, any>): void {
+/** Remember the signed-in user's profile. The session cookie was set by the login response. */
+export function setAuth(user: Record<string, any>): void {
+  purgeLegacyToken();
   const storage = getStorage();
-  storage.setItem(TOKEN_KEY, token);
   storage.setItem(USER_KEY, JSON.stringify(user));
   // In PWA mode, also write to sessionStorage so within-session reads work
   if (isPwaStandalone()) {
-    sessionStorage.setItem(TOKEN_KEY, token);
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 }
@@ -76,8 +91,7 @@ export function updateUser(updates: Record<string, any>): void {
 
 export function clearAuth(): void {
   // Clear from both storages to ensure complete logout
-  sessionStorage.removeItem(TOKEN_KEY);
+  purgeLegacyToken();
   sessionStorage.removeItem(USER_KEY);
-  localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 }

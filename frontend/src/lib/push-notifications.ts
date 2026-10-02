@@ -1,5 +1,5 @@
 import { api } from './api';
-import { getToken as getAuthToken } from './auth-storage';
+import { hasSession } from './auth-storage';
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
@@ -22,8 +22,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return false;
   if (!('PushManager' in window)) return false;
 
-  const authToken = getAuthToken();
-  if (!authToken || authToken === 'demo-token') return false;
+  if (!hasSession()) return false;
 
   try {
     const permission = await Notification.requestPermission();

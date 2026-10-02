@@ -30,9 +30,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api, authFetch } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { usePlatformBranding } from '@/hooks/use-platform-branding';
 
 interface Company {
@@ -198,9 +198,8 @@ export default function CompaniesPage() {
     try {
       const form = new FormData();
       form.append('logo', file);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/upload/company-logo`, {
+      const res = await authFetch(`/api/v1/upload/company-logo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: form,
       });
       if (!res.ok) throw new Error('Upload failed');
@@ -371,9 +370,8 @@ export default function CompaniesPage() {
     try {
       const form = new FormData();
       form.append('logo', file);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/upload/company-logo`, {
+      const res = await authFetch(`/api/v1/upload/company-logo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: form,
       });
       if (!res.ok) throw new Error('Upload failed');
@@ -420,9 +418,7 @@ export default function CompaniesPage() {
   const handleExportTenant = async (company: Company) => {
     setExportingCompany(company.id);
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${base}/api/v1/companies/${company.id}/export`, {
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
+      const res = await authFetch(`/api/v1/companies/${company.id}/export`, {
       });
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
@@ -569,9 +565,8 @@ export default function CompaniesPage() {
     try {
       const form = new FormData();
       form.append('logo', file);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/upload/company-logo`, {
+      const res = await authFetch(`/api/v1/upload/company-logo`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: form,
       });
       if (!res.ok) throw new Error('Upload failed');

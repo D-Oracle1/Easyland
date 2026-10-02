@@ -63,9 +63,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api, authFetch } from '@/lib/api';
 import { NairaSign } from '@/components/icons/naira-sign';
-import { getToken } from '@/lib/auth-storage';
+import { hasSession } from '@/lib/auth-storage';
 import { Switch } from '@/components/ui/switch';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
@@ -539,9 +539,7 @@ function AdminStaffPage() {
 
   const handleDownloadStaffTemplate = async () => {
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const res = await fetch(`${base}/api/v1/staff/import-template`, {
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
+      const res = await authFetch(`/api/v1/staff/import-template`, {
       });
       if (!res.ok) throw new Error('Failed to download template');
       const blob = await res.blob();
@@ -561,12 +559,10 @@ function AdminStaffPage() {
     setImporting(true);
     setImportResults(null);
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const form = new FormData();
       form.append('file', importFile);
-      const res = await fetch(`${base}/api/v1/staff/bulk-import`, {
+      const res = await authFetch(`/api/v1/staff/bulk-import`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken() || ''}` },
         body: form,
       });
       const data = await res.json();
