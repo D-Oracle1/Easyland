@@ -58,12 +58,21 @@ const nextConfig = {
   },
   async rewrites() {
     const backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
+    return {
+      // Browsers fetch these well-known paths on their own; serve the generated
+      // app icon (logo on the brand tile) instead of the old static files.
+      beforeFiles: [
+        { source: '/favicon.ico', destination: '/api/app-icon/favicon' },
+        { source: '/apple-touch-icon.png', destination: '/api/app-icon/apple' },
+        { source: '/apple-touch-icon-precomposed.png', destination: '/api/app-icon/apple' },
+      ],
+      afterFiles: [
+        {
+          source: '/api/:path*',
+          destination: `${backendUrl}/api/:path*`,
+        },
+      ],
+    };
   },
 };
 

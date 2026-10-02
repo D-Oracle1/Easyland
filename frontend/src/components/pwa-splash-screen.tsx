@@ -1,32 +1,25 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useBranding, ensureBranding } from '@/hooks/use-branding';
-import { getImageUrl } from '@/lib/api';
+
+/** Same generated tile as the installed app icon and favicon (see /api/app-icon). */
+const SPLASH_ICON = '/api/app-icon?size=320&rounded=1&v=2';
 
 /**
  * Branded launch splash for the installed PWA.
  *
- * Shows the company logo (light letterform + leaf) on the deep brand-green
- * background — matching the manifest background_color and app icon — when the app is opened in standalone (installed) mode, then fades
- * out once the page has loaded AND the logo is available. On the very first
- * launch the branding cache may be empty, so we explicitly fetch it and hold
- * the splash (up to a hard cap) until the real logo can paint — that way the
- * user never sees a blank placeholder instead of the brand. Plain web visits
- * are left untouched.
+ * Shows the app icon (company logo on the brand tile — the same image as the
+ * home-screen icon and favicon) on the deep brand-green background when the
+ * app is opened in standalone (installed) mode, then fades out once the page
+ * has loaded AND the icon has painted (up to a hard cap). Plain web visits are
+ * left untouched.
  */
 export function PWASplashScreen() {
-  const branding = useBranding();
   const [visible, setVisible] = useState(false);
+  const [iconLoaded, setIconLoaded] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const startRef = useRef(0);
   const doneRef = useRef(false);
-
-  const logo = branding.logo
-    ? branding.logo.startsWith('http')
-      ? branding.logo
-      : getImageUrl(branding.logo)
-    : null;
 
   // Decide whether to show the splash (installed PWA, once per app session).
   useEffect(() => {
@@ -37,8 +30,6 @@ export function PWASplashScreen() {
     if (!isStandalone || sessionStorage.getItem('pwa_splash_shown')) return;
     sessionStorage.setItem('pwa_splash_shown', '1');
 
-    // Kick off a branding fetch so the real logo is ready as soon as possible.
-    ensureBranding();
     startRef.current = Date.now();
     setVisible(true);
   }, []);
@@ -63,7 +54,7 @@ export function PWASplashScreen() {
     const cap = window.setTimeout(beginLeave, MAX_MS);
 
     const pageReady = document.readyState === 'complete';
-    const logoReady = !!logo;
+    const logoReady = iconLoaded;
 
     // Release once the window has loaded and the brand logo can paint.
     if (pageReady && logoReady) {
@@ -76,7 +67,7 @@ export function PWASplashScreen() {
     }
 
     // Not ready yet: re-run this effect when the window finishes loading.
-    // (Logo readiness re-runs it via the `logo` dependency.)
+    // (Icon readiness re-runs it via the `iconLoaded` dependency.)
     const onLoad = () => setVisible((v) => v); // nudge a re-render
     if (!pageReady) window.addEventListener('load', onLoad, { once: true });
 
@@ -84,7 +75,7 @@ export function PWASplashScreen() {
       window.clearTimeout(cap);
       window.removeEventListener('load', onLoad);
     };
-  }, [visible, logo]);
+  }, [visible, iconLoaded]);
 
   if (!visible) return null;
 
@@ -113,20 +104,16 @@ export function PWASplashScreen() {
       `}</style>
 
       <div className="flex flex-col items-center gap-9">
-        {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logo}
-            alt=""
-            className="pwa-splash-logo h-28 w-28 object-contain drop-shadow-xl"
-            style={{ animation: 'pwaSplashPop .6s ease-out both' }}
-          />
-        ) : (
-          <div
-            className="pwa-splash-logo h-28 w-28 rounded-3xl"
-            style={{ background: 'rgba(255,255,255,0.15)', animation: 'pwaSplashPop .6s ease-out both' }}
-          />
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={SPLASH_ICON}
+          alt=""
+          onLoad={() => setIconLoaded(true)}
+          onError={() => setIconLoaded(true)}
+          className="pwa-splash-logo h-32 w-32 rounded-[28px] shadow-2xl ring-1 ring-white/20"
+          // Pop in only once the image has actually decoded
+          style={iconLoaded ? { animation: 'pwaSplashPop .6s ease-out both' } : { opacity: 0 }}
+        />
 
         <div className="h-1 w-24 overflow-hidden rounded-full bg-white/15">
           <div

@@ -40,14 +40,15 @@ export const metadata: Metadata = {
   },
   icons: {
     // Generated per tenant: company logo on the brand-green tile (see /api/app-icon)
+    // (/favicon.ico and /apple-touch-icon.png are rewritten to it too — see next.config.js)
+    // `v` busts browsers' long-lived favicon cache when the icon changes.
     icon: [
-      { url: '/api/app-icon?size=64&rounded=1', type: 'image/png' },
-      { url: '/favicon.ico' },
+      { url: '/api/app-icon?size=32&rounded=1&v=2', sizes: '32x32', type: 'image/png' },
+      { url: '/api/app-icon?size=192&rounded=1&v=2', sizes: '192x192', type: 'image/png' },
     ],
-    shortcut: [{ url: '/api/app-icon?size=64&rounded=1' }],
+    shortcut: [{ url: '/api/app-icon?size=32&rounded=1&v=2' }],
     apple: [
-      { url: '/api/app-icon?size=180', sizes: '180x180', type: 'image/png' },
-      { url: '/apple-touch-icon.png' },
+      { url: '/api/app-icon?size=180&v=2', sizes: '180x180', type: 'image/png' },
     ],
   },
   other: {
