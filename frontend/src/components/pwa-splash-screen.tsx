@@ -10,7 +10,7 @@ const SPLASH_ICON = '/api/app-icon?size=320&rounded=1&v=2';
  * Branded launch splash for the installed PWA.
  *
  * Shows the app icon (company logo on the brand tile — the same image as the
- * home-screen icon and favicon) on the deep brand-green background when the
+ * home-screen icon and favicon) on white with a faint doodle pattern when the
  * app is opened in standalone (installed) mode, then fades out once the page
  * has loaded AND the icon has painted (up to a hard cap). Plain web visits are
  * left untouched.
@@ -84,11 +84,17 @@ export function PWASplashScreen() {
   return (
     <div
       aria-hidden
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#166534] via-[#14532d] to-[#0d2b1c] transition-opacity ease-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white transition-opacity ease-out ${
         leaving ? 'opacity-0' : 'opacity-100'
       }`}
       style={{ transitionDuration: '600ms' }}
     >
+      {/* Doodle pattern, faded to 6% */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ backgroundImage: "url('/splash-doodle.webp')", backgroundRepeat: 'repeat', backgroundSize: '320px', opacity: 0.06 }}
+      />
       <style>{`
         @keyframes pwaSplashPop {
           0% { opacity: 0; transform: scale(.6) translateY(12px); }
@@ -110,14 +116,14 @@ export function PWASplashScreen() {
         }
       `}</style>
 
-      <div className="flex flex-col items-center gap-7">
+      <div className="relative flex flex-col items-center gap-7">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={SPLASH_ICON}
           alt=""
           onLoad={onIconReady}
           onError={onIconReady}
-          className="pwa-splash-logo h-20 w-20 rounded-[20px] shadow-xl ring-1 ring-white/20"
+          className="pwa-splash-logo h-20 w-20 rounded-[20px] shadow-xl ring-1 ring-black/5"
           // Pop in only once the image has actually decoded, then breathe gently
           style={
             iconLoaded
@@ -126,10 +132,10 @@ export function PWASplashScreen() {
           }
         />
 
-        <div className="h-1 w-16 overflow-hidden rounded-full bg-white/15">
+        <div className="h-1 w-16 overflow-hidden rounded-full bg-green-700/15">
           <div
             className="pwa-splash-bar h-full w-1/3 rounded-full"
-            style={{ background: '#ffffff', animation: 'pwaSplashBar 1.6s ease-in-out infinite' }}
+            style={{ background: '#15803d', animation: 'pwaSplashBar 1.6s ease-in-out infinite' }}
           />
         </div>
       </div>
