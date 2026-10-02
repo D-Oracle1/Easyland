@@ -449,17 +449,23 @@ export function Sidebar({
                 </div>
               )
             ) : branding.logo ? (
-              <BrandLogo src={getImageUrl(branding.logo)} alt={branding.companyName || 'Logo'} on="dark" className="w-9 h-9 shrink-0" />
-            ) : (
-              <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              // White tile so the green leaf + letterform stay visible on the green sidebar
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center shrink-0 p-1">
+                <BrandLogo src={getImageUrl(branding.logo)} alt={branding.companyName || 'Logo'} on="light" className="w-full h-full" />
+              </div>
+            ) : branding.companyName ? (
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5 text-white" />
               </div>
+            ) : (
+              // Branding still loading — neutral placeholder, no generic icon flash
+              <div className="w-10 h-10 rounded-xl bg-white/90 shrink-0" />
             )}
             {!collapsed && (
               <div className="min-w-0">
                 <span
                   className={cn(
-                    'text-base font-bold truncate block max-w-[150px]',
+                    'text-[17px] font-extrabold tracking-tight truncate block max-w-[160px]',
                     role === 'super-admin' ? 'text-gray-900' : 'text-white',
                   )}
                   title={branding.companyName || undefined}

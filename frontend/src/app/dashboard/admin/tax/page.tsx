@@ -63,16 +63,20 @@ export default function TaxPage() {
     setLoading(true);
     try {
       // api.get returns raw JSON — backend shape: { data: [...], meta: { totalPages, ... } }
-      const firstPage: any = await api.get('/taxes?page=1&limit=50');
+      const PAGE_SIZE = 200;
+      const firstPage: any = await api.get(`/taxes?page=1&limit=${PAGE_SIZE}`);
       const meta = firstPage?.meta ?? {};
       const totalPages: number = meta?.totalPages ?? 1;
       let rawRecords: any[] = Array.isArray(firstPage?.data) ? firstPage.data : [];
 
-      // Fetch remaining pages if any
-      for (let p = 2; p <= totalPages; p++) {
-        const page: any = await api.get(`/taxes?page=${p}&limit=50`);
-        const pageRecords: any[] = Array.isArray(page?.data) ? page.data : [];
-        rawRecords = rawRecords.concat(pageRecords);
+      // Fetch any remaining pages in parallel
+      if (totalPages > 1) {
+        const rest: any[] = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) => api.get(`/taxes?page=${i + 2}&limit=${PAGE_SIZE}`)),
+        );
+        for (const page of rest) {
+          if (Array.isArray(page?.data)) rawRecords = rawRecords.concat(page.data);
+        }
       }
 
       const mapped = rawRecords.map((item: any) => {
@@ -124,10 +128,11 @@ export default function TaxPage() {
   }, [fetchTaxRecords]);
 
   useEffect(() => {
+    // Just load. Tax records are created when a sale is approved; a full
+    // re-sync only runs from the Sync button or when the rate changes.
     fetchTaxRate();
-    // Auto-sync on mount to populate records for existing approved sales
-    syncRecords(true);
-  }, [fetchTaxRate, syncRecords]);
+    fetchTaxRecords();
+  }, [fetchTaxRate, fetchTaxRecords]);
 
   // Auto-save tax rate (debounced 600ms) — updates incomeTax which drives commission deductions,
   // then recalculates all existing tax records so they reflect the new rate immediately.

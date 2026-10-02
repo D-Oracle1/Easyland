@@ -47,16 +47,23 @@ export class TaxService {
         skip,
         take: limitNum,
         orderBy: [{ year: 'desc' }, { quarter: 'desc' }],
+        // Only the fields the tax list shows — full sale/realtor rows made this slow
         include: {
           sale: {
-            include: {
+            select: {
+              id: true,
+              salePrice: true,
+              commissionAmount: true,
+              saleDate: true,
               property: {
                 select: { title: true, address: true },
               },
             },
           },
           realtor: {
-            include: {
+            select: {
+              id: true,
+              loyaltyTier: true,
               user: {
                 select: { firstName: true, lastName: true, email: true },
               },
@@ -271,6 +278,20 @@ export class TaxService {
       },
     });
 
+    // Bulk-read everything once, then write only what actually differs.
+    // (The old per-sale loop made 4 sequential DB round-trips per sale.)
+    const saleIds = sales.map((sale) => sale.id);
+    const [taxes, commissions, saleFigures] = await Promise.all([
+      this.prisma.tax.findMany({ where: { saleId: { in: saleIds } }, select: { saleId: true, amount: true, rate: true } }),
+      this.prisma.commission.findMany({ where: { saleId: { in: saleIds } }, select: { saleId: true, amount: true } }),
+      this.prisma.sale.findMany({ where: { id: { in: saleIds } }, select: { id: true, taxRate: true, taxAmount: true, netAmount: true } }),
+    ]);
+    const taxBySale = new Map(taxes.map((t) => [t.saleId, t]));
+    const commissionBySale = new Map(commissions.map((c) => [c.saleId, c]));
+    const figuresBySale = new Map(saleFigures.map((f) => [f.id, f]));
+    const differs = (a: unknown, b: number, eps = 0.005) => a == null || Math.abs(Number(a) - b) > eps;
+
+    const ops: any[] = [];
     let updated = 0;
     let created = 0;
 
@@ -283,34 +304,31 @@ export class TaxService {
       const quarter          = Math.floor(saleDate.getMonth() / 3) + 1;
 
       // Correct the sale's tax figures
-      await this.prisma.sale.update({
-        where: { id: sale.id },
-        data: { taxRate, taxAmount, netAmount },
-      });
+      const fig = figuresBySale.get(sale.id);
+      if (!fig || differs(fig.taxRate, taxRate, 1e-6) || differs(fig.taxAmount, taxAmount) || differs(fig.netAmount, netAmount)) {
+        ops.push(this.prisma.sale.update({ where: { id: sale.id }, data: { taxRate, taxAmount, netAmount } }));
+      }
 
       // Ensure a Commission record exists for this sale
-      await this.prisma.commission.upsert({
-        where: { saleId: sale.id },
-        update: { amount: commissionAmount },
-        create: {
-          saleId: sale.id,
-          realtorId: sale.realtorId!,
-          amount: commissionAmount,
-          rate: sale.commissionRate,
-          status: 'PENDING',
-        },
-      });
+      const commission = commissionBySale.get(sale.id);
+      if (!commission) {
+        ops.push(this.prisma.commission.create({
+          data: {
+            saleId: sale.id,
+            realtorId: sale.realtorId!,
+            amount: commissionAmount,
+            rate: sale.commissionRate,
+            status: 'PENDING',
+          },
+        }));
+      } else if (differs(commission.amount, commissionAmount)) {
+        ops.push(this.prisma.commission.update({ where: { saleId: sale.id }, data: { amount: commissionAmount } }));
+      }
 
       // Upsert the Tax record
-      const existing = await this.prisma.tax.findUnique({ where: { saleId: sale.id } });
-      if (existing) {
-        await this.prisma.tax.update({
-          where: { saleId: sale.id },
-          data: { amount: taxAmount, rate: taxRate },
-        });
-        updated++;
-      } else {
-        await this.prisma.tax.create({
+      const existing = taxBySale.get(sale.id);
+      if (!existing) {
+        ops.push(this.prisma.tax.create({
           data: {
             saleId: sale.id,
             realtorId: sale.realtorId!,
@@ -319,9 +337,17 @@ export class TaxService {
             year,
             quarter,
           },
-        });
+        }));
         created++;
+      } else if (differs(existing.amount, taxAmount) || differs(existing.rate, taxRate, 1e-6)) {
+        ops.push(this.prisma.tax.update({ where: { saleId: sale.id }, data: { amount: taxAmount, rate: taxRate } }));
+        updated++;
       }
+    }
+
+    // Apply in batched transactions (one round-trip per batch)
+    for (let i = 0; i < ops.length; i += 100) {
+      await this.prisma.$transaction(ops.slice(i, i + 100));
     }
 
     return { updated, created };
