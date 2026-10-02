@@ -120,6 +120,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Account is not active');
       }
 
+      // Branch scope for BranchGuard: a manager is linked via Branch.managerId
+      let branchId: string | null = user.branchId ?? null;
+      if (!branchId && user.role === 'BRANCH_MANAGER') {
+        const db = payload.companyId ? await this.tenantPrisma.getClient(payload.companyId) : getFallbackClient();
+        const branch = await db.branch.findUnique({ where: { managerId: user.id }, select: { id: true } }).catch(() => null);
+        branchId = branch?.id ?? null;
+      }
+
       return {
         id: user.id,
         email: user.email,
@@ -127,6 +135,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         firstName: user.firstName,
         lastName: user.lastName,
         companyId: payload.companyId,
+        branchId,
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;

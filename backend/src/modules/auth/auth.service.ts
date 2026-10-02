@@ -332,7 +332,7 @@ export class AuthService {
     const { password, ...userWithoutPassword } = user;
 
     return {
-      user: { ...userWithoutPassword, companyId },
+      user: { ...userWithoutPassword, branchId: await this.resolveBranchId(user), companyId },
       ...tokens,
     };
   }
@@ -371,7 +371,17 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user, payload.companyId || null);
     const { password, ...userWithoutPassword } = user;
-    return { user: { ...userWithoutPassword, companyId: payload.companyId || null }, ...tokens };
+    return {
+      user: { ...userWithoutPassword, branchId: await this.resolveBranchId(user), companyId: payload.companyId || null },
+      ...tokens,
+    };
+  }
+
+  /** A branch manager is linked via Branch.managerId, not necessarily users.branchId. */
+  private async resolveBranchId(user: { id: string; role: string; branchId?: string | null }) {
+    if (user.branchId || user.role !== 'BRANCH_MANAGER') return user.branchId ?? null;
+    const branch = await this.prisma.branch.findUnique({ where: { managerId: user.id }, select: { id: true } }).catch(() => null);
+    return branch?.id ?? null;
   }
 
   async validateUser(email: string, password: string) {

@@ -28,7 +28,7 @@ export function getToken(): string | null {
   return storage.getItem(TOKEN_KEY) || (isPwaStandalone() ? sessionStorage.getItem(TOKEN_KEY) : localStorage.getItem(TOKEN_KEY));
 }
 
-export function getUser(): { id: string; firstName: string; lastName: string; email: string; role: string; avatar?: string; companyId?: string; isSuperAdmin?: boolean; referralCode?: string } | null {
+export function getUser(): { id: string; firstName: string; lastName: string; email: string; role: string; avatar?: string; companyId?: string; isSuperAdmin?: boolean; referralCode?: string; branchId?: string | null } | null {
   if (typeof window === 'undefined') return null;
   try {
     const storage = getStorage();
