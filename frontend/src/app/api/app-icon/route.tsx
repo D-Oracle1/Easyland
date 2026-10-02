@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { ImageResponse } from 'next/og';
-import { LAUNCH_BG } from '@/lib/brand-colors';
+import { MASKABLE_BG } from '@/lib/brand-colors';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -57,9 +57,9 @@ export async function GET(req: NextRequest) {
   const rounded = url.searchParams.get('rounded') === '1' && !maskable;
   // Splash (non-maskable): draw a smaller tile centred on transparency
   const tile = splash && !maskable ? Math.round(size * 0.56) : size;
-  // Android 12+ shows the (maskable) launcher icon on its launch screen at a
-  // fixed, large size — so the logo inside maskable icons is kept compact.
-  const logoSize = Math.round(maskable ? size * (splash ? 0.3 : 0.4) : tile * 0.64);
+  // Maskable: bold logo, still inside the 2/3 circle Android shows on its
+  // launch screen (radius 33%) and the 80% adaptive-icon safe zone.
+  const logoSize = Math.round(maskable ? size * 0.56 : tile * 0.64);
   const radius = rounded || (splash && !maskable) ? Math.round(tile * 0.22) : 0;
 
   const tileEl = (
@@ -70,9 +70,9 @@ export async function GET(req: NextRequest) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          // Maskable: solid LAUNCH_BG so Android's launch-screen circle blends into
-          // the manifest background_color and only the logo stands out.
-          background: maskable ? LAUNCH_BG : `linear-gradient(145deg, ${FROM} 0%, #166534 45%, ${TO} 100%)`,
+          // Maskable: solid colour, so our in-app splash can draw the identical
+          // circle Android shows on its launch screen (see lib/brand-colors).
+          background: maskable ? MASKABLE_BG : `linear-gradient(145deg, ${FROM} 0%, #166534 45%, ${TO} 100%)`,
           borderRadius: radius,
         }}
       >

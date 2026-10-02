@@ -436,3 +436,26 @@
 @media (min-width: 768px) {
   .pwa-install-card { bottom: 24px; }
 }
+
+/* ── Installed-app launch splash (components/pwa-splash-screen.tsx) ──
+   Shown by CSS from the first paint, only in installed-app display modes;
+   html[data-splash-done] hides it (set by JS, or by the inline head script on
+   later reloads in the same session). */
+.pwa-splash { display: none; }
+@media (display-mode: fullscreen), (display-mode: standalone), (display-mode: minimal-ui) {
+  .pwa-splash { display: block; }
+}
+html[data-splash-done] .pwa-splash { display: none !important; }
+
+@keyframes pwa-splash-doodle-in { from { opacity: 0; } to { opacity: 0.06; } }
+@keyframes pwa-splash-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pwa-splash-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes pwa-splash-bar { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+.pwa-splash-doodle { opacity: 0; animation: pwa-splash-doodle-in 1.2s ease-out 0.3s forwards; }
+/* starts still (matching Android's frame), then breathes gently */
+.pwa-splash-logo { animation: pwa-splash-breathe 2.6s ease-in-out 0.6s infinite; }
+.pwa-splash-barwrap { opacity: 0; animation: pwa-splash-fade-in 0.5s ease-out 0.8s forwards; }
+.pwa-splash-bar { animation: pwa-splash-bar 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .pwa-splash-logo, .pwa-splash-bar { animation: none !important; }
+}

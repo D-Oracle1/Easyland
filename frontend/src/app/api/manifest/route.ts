@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LAUNCH_BG } from '@/lib/brand-colors';
+import { LAUNCH_BG, ICON_VERSION } from '@/lib/brand-colors';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -18,9 +18,8 @@ export async function GET(req: NextRequest) {
   let companyName = 'Easyland';
   let shortName = 'Easyland';
   let description = 'Enterprise-grade PropTech platform for managing realtors, properties, and clients';
-  // Brand CTA green. The launch-screen background equals the maskable icon's
-  // solid background, so Android's icon circle disappears into it and only the
-  // compact logo shows.
+  // Brand CTA green. Launch background is white, like the in-app splash, which
+  // starts with the same icon circle Android draws (see lib/brand-colors).
   let themeColor = '#15803d';
   const bgColor = LAUNCH_BG;
   let icons = DEFAULT_ICONS;
@@ -53,12 +52,10 @@ export async function GET(req: NextRequest) {
         // Generated icons: logo on the brand tile (always has contrast), plus
         // a padded maskable version for Android's adaptive icon shapes.
         icons = [
-          // Home screen picks the ~192px icons; Android's launch screen picks the
-          // largest, so the 512s are the smaller-logo "splash" variants.
-          { src: '/api/app-icon?size=192&rounded=1&v=5', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/api/app-icon?size=512&rounded=1&splash=1&v=5', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/api/app-icon?size=192&maskable=1&v=5', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-          { src: '/api/app-icon?size=512&maskable=1&splash=1&v=5', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: `/api/app-icon?size=192&rounded=1&v=${ICON_VERSION}`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: `/api/app-icon?size=512&rounded=1&v=${ICON_VERSION}`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: `/api/app-icon?size=192&maskable=1&v=${ICON_VERSION}`, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: `/api/app-icon?size=512&maskable=1&v=${ICON_VERSION}`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ];
       }
     } catch {

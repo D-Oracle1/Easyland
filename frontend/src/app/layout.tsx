@@ -90,6 +90,14 @@ export default function RootLayout({
           alone so notifications keep working. No forced reload — this only runs
           on already-fresh HTML, so referenced chunks are already current.
         */}
+        {/* Launch splash: already shown this session (a reload) → hide it before
+            it can paint. Runs before the splash markup below is parsed. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `try{if(sessionStorage.getItem('pwa_splash_shown'))document.documentElement.setAttribute('data-splash-done','')}catch(e){}`,
+          }}
+        />
         <script
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
