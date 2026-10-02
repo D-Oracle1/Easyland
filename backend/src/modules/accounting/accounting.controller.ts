@@ -134,4 +134,19 @@ export class AccountingController {
   validateConsistency() {
     return this.service.validateConsistency();
   }
+
+  @Get('branches/comparison')
+  @Roles(UserRole.ADMIN, UserRole.GENERAL_OVERSEER, UserRole.SUPER_ADMIN as any)
+  @ApiOperation({ summary: 'Revenue & profit comparison across all branches' })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  getBranchComparison(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const now = new Date();
+    const start = startDate ?? new Date(now.getFullYear(), 0, 1).toISOString();
+    const end = endDate ?? now.toISOString();
+    return this.service.getBranchComparison(start, end);
+  }
 }

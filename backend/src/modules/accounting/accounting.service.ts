@@ -800,4 +800,58 @@ export class AccountingService {
   async validateConsistency() {
     return this.ledger.validateConsistency();
   }
+
+  /** Consolidated revenue comparison across all branches (plus unassigned/head office) */
+  async getBranchComparison(startDate: string, endDate: string) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    // A plain date (YYYY-MM-DD) as the end means "through the end of that day"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) end.setUTCHours(23, 59, 59, 999);
+
+    const branches = await this.prisma.branch.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, code: true, city: true },
+    });
+
+    const totalsFor = async (branchId: string | null) => {
+      const [sales, expenses] = await Promise.all([
+        this.prisma.sale.aggregate({
+          where: { branchId, status: 'COMPLETED', saleDate: { gte: start, lte: end } },
+          _sum: { salePrice: true, netAmount: true },
+          _count: true,
+        }),
+        this.safeExpenseQuery(
+          () => this.prisma.expense.aggregate({
+            where: { branchId, approvalStatus: 'APPROVED', deletedAt: null, expenseDate: { gte: start, lte: end } },
+            _sum: { amount: true },
+          }),
+          { _sum: { amount: null } } as any,
+        ),
+      ]);
+      const revenue = this.toNum(sales._sum.salePrice);
+      const spent = this.toNum((expenses as any)._sum.amount);
+      return { totalSales: sales._count, revenue, expenses: spent, netProfit: revenue - spent };
+    };
+
+    const data: Array<{ branchId: string | null; branchName: string; branchCode: string | null; city: string | null; totalSales: number; revenue: number; expenses: number; netProfit: number }> =
+      await Promise.all(
+        branches.map(async (b) => ({ branchId: b.id, branchName: b.name, branchCode: b.code, city: b.city, ...(await totalsFor(b.id)) })),
+      );
+
+    // Records not yet assigned to a branch (everything before the branch system)
+    const unassigned = await totalsFor(null);
+    if (unassigned.totalSales > 0 || unassigned.expenses > 0) {
+      data.push({ branchId: null, branchName: 'Head office (unassigned)', branchCode: null, city: null, ...unassigned });
+    }
+
+    const totalRevenue = data.reduce((s, b) => s + b.revenue, 0);
+    const totalExpenses = data.reduce((s, b) => s + b.expenses, 0);
+    const totalProfit = data.reduce((s, b) => s + b.netProfit, 0);
+
+    return {
+      period: { startDate: start.toISOString(), endDate: end.toISOString() },
+      consolidated: { totalRevenue, totalExpenses, totalProfit, branchCount: branches.length },
+      branches: data.sort((a, b) => b.revenue - a.revenue),
+    };
+  }
 }
