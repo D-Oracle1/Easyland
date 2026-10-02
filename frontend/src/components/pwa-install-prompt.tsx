@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Download, Share, SquarePlus, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Download, EllipsisVertical, MonitorDown, Share, SquarePlus, X } from 'lucide-react';
 import { useBranding, getCompanyName } from '@/hooks/use-branding';
 import { isInstalledApp } from '@/lib/pwa';
 import { APP_ICON_TILE } from '@/components/brand-logo';
@@ -24,35 +24,87 @@ function snoozed(): boolean {
   }
 }
 
+type Step = { icon: ReactNode; text: ReactNode };
+type Guide = { subtitle: string; steps: Step[] };
+
+const stepIcon = (node: ReactNode) => (
+  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white shadow-sm dark:bg-gray-900">{node}</span>
+);
+
 /**
- * iOS has no install API — every browser installs via its Share menu (Safari
- * always; Chrome, Edge and Firefox since iOS 16.4). Safari's Share button is in
- * the bottom toolbar; the others put it in or beside the address bar.
+ * Browsers that can install the app but have no install API (so no real
+ * Install button): show their own short steps instead.
+ *  - iOS: every browser installs via Share → Add to Home Screen (Safari always;
+ *    Chrome, Edge, Firefox since iOS 16.4). Safari's Share is in the toolbar,
+ *    the others put it in or beside the address bar.
+ *  - Firefox on Android: menu (⋮) → Install.
+ *  - Safari on Mac (macOS Sonoma / Safari 17+): File → Add to Dock.
+ * Chrome, Edge, Samsung Internet and Opera fire beforeinstallprompt instead.
  */
-function iosBrowser(): 'safari' | 'other' | null {
+function manualGuide(): Guide | null {
   const ua = navigator.userAgent;
-  const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (!ios) return null;
-  return /crios|fxios|edgios|opios/i.test(ua) ? 'other' : 'safari';
+  const iPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  const ios = /iphone|ipad|ipod/i.test(ua) || iPadOS;
+
+  if (ios) {
+    const safari = !/crios|fxios|edgios|opios/i.test(ua);
+    return {
+      subtitle: 'Full screen, faster to open, right from your home screen.',
+      steps: [
+        {
+          icon: stepIcon(<Share className="h-3.5 w-3.5 text-blue-500" />),
+          text: safari ? <>Tap <b>Share</b> in Safari&apos;s toolbar</> : <>Tap <b>Share</b> in the address bar</>,
+        },
+        { icon: stepIcon(<SquarePlus className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" />), text: <>Choose <b>Add to Home Screen</b></> },
+      ],
+    };
+  }
+
+  if (/android/i.test(ua) && /firefox\//i.test(ua)) {
+    return {
+      subtitle: 'Full screen, faster to open, right from your home screen.',
+      steps: [
+        { icon: stepIcon(<EllipsisVertical className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" />), text: <>Tap the <b>menu</b> (⋮) in Firefox</> },
+        { icon: stepIcon(<SquarePlus className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" />), text: <>Choose <b>Install</b> (or <b>Add to Home screen</b>)</> },
+      ],
+    };
+  }
+
+  const safariVersion = /version\/(\d+)[\d.]* .*safari/i.exec(ua);
+  const macSafari = /macintosh/i.test(ua) && !iPadOS && !!safariVersion && !/chrome|chromium|edg\/|firefox|opr\//i.test(ua);
+  if (macSafari && Number(safariVersion![1]) >= 17) {
+    return {
+      subtitle: 'Opens in its own window, right from your Dock.',
+      steps: [
+        { icon: stepIcon(<MonitorDown className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" />), text: <>Click <b>File</b> in the menu bar (or the <b>Share</b> button)</> },
+        { icon: stepIcon(<SquarePlus className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" />), text: <>Choose <b>Add to Dock</b></> },
+      ],
+    };
+  }
+
+  return null;
 }
 
 /**
- * "Install the app" card. On Android/desktop Chromium it triggers the browser's
- * real install dialog (beforeinstallprompt); on iOS Safari, which has no install
- * API, it shows the Share → Add to Home Screen steps. Never shown inside the
- * installed app, and "Not now" snoozes it for a week.
+ * "Install the app" card. Where the browser supports it (Chrome, Edge, Samsung
+ * Internet, Opera) it triggers the real install dialog via beforeinstallprompt;
+ * elsewhere it shows that browser's install steps (see manualGuide). Never shown
+ * inside the installed app, and "Not now" / close snoozes it for a week.
  */
 export function PWAInstallPrompt() {
   const branding = useBranding();
   const name = getCompanyName(branding);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [ios, setIos] = useState<'safari' | 'other' | null>(null);
+  const [guide, setGuide] = useState<Guide | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (isInstalledApp() || snoozed()) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const reveal = () => { timer = setTimeout(() => setOpen(true), SHOW_AFTER_MS); };
+    const reveal = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setOpen(true), SHOW_AFTER_MS);
+    };
 
     const onPrompt = (e: Event) => {
       e.preventDefault(); // we show our own card instead of the mini-infobar
@@ -63,8 +115,8 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', onPrompt);
     window.addEventListener('appinstalled', onInstalled);
-    const browser = iosBrowser();
-    if (browser) { setIos(browser); reveal(); }
+    const manual = manualGuide();
+    if (manual) { setGuide(manual); reveal(); }
 
     return () => {
       if (timer) clearTimeout(timer);
@@ -87,7 +139,9 @@ export function PWAInstallPrompt() {
     else dismiss();
   };
 
-  if (!open || (!deferred && !ios)) return null;
+  if (!open || (!deferred && !guide)) return null;
+  // A real install button beats manual steps when the browser offers both
+  const showSteps = !deferred && guide;
 
   return (
     <div
@@ -111,21 +165,19 @@ export function PWAInstallPrompt() {
           <div className="min-w-0">
             <p className="font-bold text-gray-900 dark:text-white">Install the {name} app</p>
             <p className="text-[13px] leading-snug text-gray-500 dark:text-gray-400">
-              Full screen, faster to open, right from your home screen.
+              {showSteps ? guide.subtitle : 'Full screen, faster to open, right from your home screen.'}
             </p>
           </div>
         </div>
 
-        {ios ? (
+        {showSteps ? (
           <ol className="mt-3.5 space-y-2 rounded-2xl bg-gray-50 p-3 text-[13px] text-gray-700 dark:bg-gray-800/70 dark:text-gray-200">
-            <li className="flex items-center gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white shadow-sm dark:bg-gray-900"><Share className="h-3.5 w-3.5 text-blue-500" /></span>
-              {ios === 'safari' ? <>Tap <b>Share</b> in Safari&apos;s toolbar</> : <>Tap <b>Share</b> in the address bar</>}
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white shadow-sm dark:bg-gray-900"><SquarePlus className="h-3.5 w-3.5 text-gray-700 dark:text-gray-200" /></span>
-              Choose <b>Add to Home Screen</b>
-            </li>
+            {guide.steps.map((step, i) => (
+              <li key={i} className="flex items-center gap-2">
+                {step.icon}
+                <span>{step.text}</span>
+              </li>
+            ))}
           </ol>
         ) : (
           <div className="mt-3.5 grid grid-cols-2 gap-2">
