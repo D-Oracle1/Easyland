@@ -11,6 +11,7 @@ import {
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { PageHero } from '@/components/layout/page-hero';
 import { getImageUrl } from '@/lib/api';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
@@ -45,23 +46,11 @@ export default function FeaturesPage() {
       <MobileBottomNav />
 
       {/* ── HERO ── */}
-      <section className="relative bg-green-800 pt-32 pb-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-900 via-green-800 to-green-700 opacity-90" />
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, #ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-        <div className="relative container mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/15 border border-white/25 text-white px-4 py-1.5 rounded-full text-xs font-semibold mb-5">
-            <Leaf className="w-3.5 h-3.5 text-green-300" />
-            Platform Features
-          </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mt-2 mb-4 leading-tight">
-            Powerful Features for<br className="hidden md:block" /> Modern Real Estate
-          </h1>
-          <p className="text-white/75 text-base max-w-2xl mx-auto">
-            Comprehensive tools designed for property seekers, realtors, and administrators
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow={<><Leaf className="h-3.5 w-3.5 text-emerald-300" /> Platform features</>}
+        title={<>Powerful Features for<br className="hidden md:block" /> Modern Real Estate</>}
+        subtitle="Comprehensive tools designed for property seekers, realtors, and administrators"
+      />
 
       {/* ── CORE FEATURES ── */}
       {features.features && features.features.length > 0 && (

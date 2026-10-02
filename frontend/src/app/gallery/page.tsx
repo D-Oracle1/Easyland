@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { PageHero } from '@/components/layout/page-hero';
 import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { getImageUrl } from '@/lib/api';
 
@@ -75,15 +76,7 @@ export default function GalleryPage() {
       <MobileBottomNav />
 
       {/* Hero */}
-      <section className="bg-gradient-to-r from-primary via-primary-600 to-primary pt-28 pb-12 px-4">
-        <div className="container mx-auto text-center">
-          <span className="text-accent font-semibold text-sm uppercase tracking-wider">Gallery</span>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-4">Our Gallery</h1>
-          <p className="text-white/80 text-lg max-w-2xl mx-auto">
-            Explore our collection of property photos and videos
-          </p>
-        </div>
-      </section>
+      <PageHero eyebrow="Gallery" title="Our Gallery" subtitle="Explore our collection of property photos and videos" />
 
       {/* Gallery Content */}
       <section className="py-16 px-4 bg-white dark:bg-primary-950">

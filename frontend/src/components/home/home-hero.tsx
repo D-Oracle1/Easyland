@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Sparkles, ArrowUpRight, LandPlot, Home, Users } from 'lucide-react';
 import { getImageUrl } from '@/lib/api';
+import { FloatingBubbles } from '@/components/ui/floating-bubbles';
 import { CATEGORY_TYPES, CATEGORY_LABELS, categoryOf, type PropertyCategory } from '@/lib/property-categories';
 
 type Listings = Record<PropertyCategory, { items: any[]; total: number }>;
@@ -97,17 +98,8 @@ export function HomeHero({
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-32 top-10 h-[420px] w-[420px] rounded-full bg-emerald-500/25 blur-[120px]" />
         <div className="absolute right-0 top-1/3 h-[380px] w-[380px] rounded-full bg-amber-400/15 blur-[120px]" />
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-            maskImage: 'radial-gradient(ellipse at 30% 40%, black 30%, transparent 75%)',
-            WebkitMaskImage: 'radial-gradient(ellipse at 30% 40%, black 30%, transparent 75%)',
-          }}
-        />
       </div>
+      <FloatingBubbles className="-z-10" />
 
       <div className="container mx-auto grid items-center gap-8 px-4 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
         {/* Copy + search (second on phones, so the image catches the eye first) */}

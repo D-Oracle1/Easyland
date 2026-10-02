@@ -87,7 +87,7 @@ export function PWASplashScreen() {
   return (
     <div
       aria-hidden
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#15803d] via-[#166534] to-[#0d2b1c] transition-opacity ease-out ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-[#166534] via-[#14532d] to-[#0d2b1c] transition-opacity ease-out ${
         leaving ? 'opacity-0' : 'opacity-100'
       }`}
       style={{ transitionDuration: '600ms' }}

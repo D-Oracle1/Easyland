@@ -2,68 +2,87 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Building2, Zap, Camera, Users, Phone } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { Home, Building2, Images, Phone, UserRound, LayoutDashboard } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { getUser } from '@/lib/auth-storage';
 
-const NAV_ITEMS = [
-  { href: '/',           label: 'Home',       icon: Home      },
-  { href: '/properties', label: 'Properties', icon: Building2 },
-  { href: '/features',   label: 'Features',   icon: Zap       },
-  { href: '/gallery',    label: 'Gallery',    icon: Camera    },
-  { href: '/about',      label: 'About',      icon: Users     },
-  { href: '/contact',    label: 'Contact',    icon: Phone     },
-];
-
+/**
+ * App-style bottom tab bar for the public site on phones: full width, solid,
+ * safe-area aware, with clear labels. Secondary pages (Features, About) live in
+ * the navbar's menu sheet. While mounted it pads the page bottom (see
+ * body.has-bottom-nav in globals.css) so the bar never covers the footer.
+ */
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const [dashboardHref, setDashboardHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.body.classList.add('has-bottom-nav');
+    return () => document.body.classList.remove('has-bottom-nav');
+  }, []);
+
+  useEffect(() => {
+    const user = getUser();
+    if (!user) return;
+    const role = String(user.role || '')
+      .toLowerCase()
+      .replace(/_/g, '-');
+    setDashboardHref(user.isSuperAdmin || role === 'super-admin' ? '/dashboard/super-admin' : `/dashboard/${role}`);
+  }, []);
+
+  const items = [
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/properties', label: 'Properties', icon: Building2 },
+    { href: '/gallery', label: 'Gallery', icon: Images },
+    { href: '/contact', label: 'Contact', icon: Phone },
+    dashboardHref
+      ? { href: dashboardHref, label: 'Dashboard', icon: LayoutDashboard }
+      : { href: '/auth/login', label: 'Log in', icon: UserRound },
+  ];
+
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href));
 
   return (
-    <div
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
-      style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200/80 bg-white/95 shadow-[0_-6px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl md:hidden dark:border-gray-800 dark:bg-gray-950/95"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <nav className="pointer-events-auto flex items-center gap-0.5 bg-white/85 dark:bg-gray-900/85 backdrop-blur-2xl border border-white/60 dark:border-gray-700/60 shadow-2xl shadow-black/20 rounded-[28px] px-2 py-1.5">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
+      <ul className="mx-auto grid h-16 max-w-md grid-cols-5">
+        {items.map(({ href, label, icon: Icon }) => {
+          const active = isActive(href);
           return (
-            <Link key={item.label} href={item.href}>
-              <motion.div
-                whileTap={{ scale: 0.88 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                className="relative flex flex-col items-center justify-center gap-0.5 w-12 h-12 rounded-[18px] cursor-pointer select-none"
+            <li key={label}>
+              <Link
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className="relative flex h-full flex-col items-center justify-center gap-1 transition-colors active:bg-gray-50 dark:active:bg-gray-900"
               >
-                <AnimatePresence>
-                  {isActive && (
-                    <motion.div
-                      layoutId="bottom-nav-active"
-                      className="absolute inset-0 bg-green-700 rounded-[18px]"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                    />
-                  )}
-                </AnimatePresence>
-
-                <Icon
-                  className={`w-4 h-4 relative z-10 transition-colors duration-200 ${
-                    isActive ? 'text-white' : 'text-gray-400 dark:text-gray-500'
-                  }`}
-                  strokeWidth={isActive ? 2.2 : 1.8}
-                />
+                {active && <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-green-700" />}
                 <span
-                  className={`text-[9px] font-medium relative z-10 transition-colors duration-200 leading-none ${
-                    isActive ? 'text-white' : 'text-gray-400 dark:text-gray-500'
-                  }`}
+                  className={cn(
+                    'flex h-7 w-12 items-center justify-center rounded-full transition-colors',
+                    active
+                      ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                      : 'text-gray-500 dark:text-gray-400',
+                  )}
                 >
-                  {item.label}
+                  <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.3 : 1.9} />
                 </span>
-              </motion.div>
-            </Link>
+                <span
+                  className={cn(
+                    'text-[11px] font-medium leading-none',
+                    active ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400',
+                  )}
+                >
+                  {label}
+                </span>
+              </Link>
+            </li>
           );
         })}
-      </nav>
-    </div>
+      </ul>
+    </nav>
   );
 }

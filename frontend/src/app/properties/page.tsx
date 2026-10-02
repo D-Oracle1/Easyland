@@ -25,6 +25,7 @@ import { CATEGORY_TYPES } from '@/lib/property-categories';
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { PageHero } from '@/components/layout/page-hero';
 
 const PROPERTY_TYPES = [
   { value: '', label: 'All Types' },
@@ -131,14 +132,11 @@ export default function PropertiesPage() {
       <MobileBottomNav />
 
       {/* Hero */}
-      <section className="bg-gradient-to-r from-primary via-primary-600 to-primary pt-28 pb-12 px-4">
-        <div className="container mx-auto text-center">
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">Browse Properties</h1>
-          <p className="text-white/80 text-lg max-w-2xl mx-auto">
-            Discover your perfect property from our curated selection of premium real estate
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Properties"
+        title="Browse Properties"
+        subtitle="Discover your perfect property from our curated selection of premium real estate"
+      />
 
       {/* Search & Filters */}
       <section className="sticky top-16 z-40 bg-white dark:bg-primary-950 border-b border-gray-200 dark:border-primary-800 shadow-sm">

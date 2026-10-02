@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { PageHero } from '@/components/layout/page-hero';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').trim();
 
@@ -79,15 +80,11 @@ export default function ContactPage() {
       <MobileBottomNav />
 
       {/* Hero */}
-      <section className="bg-gradient-to-r from-primary via-primary-600 to-primary pt-24 md:pt-28 pb-8 md:pb-12 px-4">
-        <div className="container mx-auto text-center">
-          <span className="text-accent font-semibold text-xs md:text-sm uppercase tracking-wider">Get In Touch</span>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-3">Contact Us</h1>
-          <p className="text-white/80 text-sm md:text-lg max-w-2xl mx-auto">
-            Have questions? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Get in touch"
+        title="Contact Us"
+        subtitle="Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible."
+      />
 
       {/* Contact Grid */}
       <section className="py-10 md:py-20 px-4 bg-white dark:bg-primary-950">

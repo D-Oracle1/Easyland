@@ -18,11 +18,11 @@ import {
   ShieldCheck,
   Handshake,
   BarChart3,
-  Home,
 } from 'lucide-react';
 import { PublicNavbar } from '@/components/layout/public-navbar';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav';
+import { PageHero } from '@/components/layout/page-hero';
 import { api, getImageUrl } from '@/lib/api';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
 
@@ -90,22 +90,7 @@ export default function AboutPage() {
       <MobileBottomNav />
 
       {/* ── 1. HERO BANNER ─────────────────────────────────────────── */}
-      <section className="relative pt-16 h-[300px] md:h-[360px] flex flex-col items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-primary/90" />
-        {heroImage && (
-          <Image src={heroImage} alt="About us" fill className="object-cover opacity-20" priority />
-        )}
-        <div className="relative z-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">About Us</h1>
-          <div className="flex items-center justify-center gap-2 mt-4 text-sm text-white/60">
-            <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
-              <Home className="w-3.5 h-3.5" /> Home
-            </Link>
-            <span>/</span>
-            <span className="text-white/90">About Us</span>
-          </div>
-        </div>
-      </section>
+      <PageHero eyebrow="Who we are" title="About Us" image={heroImage} breadcrumb="About Us" />
 
       {/* ── 2. INTRO — SINGLE JUSTIFIED PARAGRAPH ──────────────────── */}
       <section className="py-20 px-4 bg-white">

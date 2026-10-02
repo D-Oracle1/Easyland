@@ -399,3 +399,31 @@
     box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
   }
 }
+
+/* ── Hero backgrounds: floating bubbles (components/ui/floating-bubbles.tsx) ── */
+@keyframes bubble-rise {
+  0% { transform: translateY(105%); opacity: 0; }
+  8% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(-30%); opacity: 0; }
+}
+@keyframes bubble-sway {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(50%) scale(1.06); }
+}
+@keyframes hero-kenburns {
+  0% { transform: scale(1.05) translate3d(0, 0, 0); }
+  100% { transform: scale(1.18) translate3d(-2%, -1.5%, 0); }
+}
+.bubble-lane { animation-name: bubble-rise; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform, opacity; }
+.bubble { animation-name: bubble-sway; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+.hero-kenburns { animation: hero-kenburns 24s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .bubble-lane, .bubble, .hero-kenburns { animation: none !important; }
+  .bubble-lane { transform: translateY(40%); opacity: 0.8; }
+}
+
+/* Public mobile tab bar (components/layout/mobile-bottom-nav.tsx) */
+@media (max-width: 767px) {
+  body.has-bottom-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
