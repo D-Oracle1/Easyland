@@ -41,8 +41,10 @@ export function CategoryCards({ listings, loading }: { listings: Listings; loadi
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <section className="relative z-10 -mt-10 px-4 md:-mt-12">
-      <div className={`container mx-auto grid max-w-5xl gap-4 ${cards.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+    <section className="relative z-10 -mt-10 md:-mt-12">
+      {/* grid-cols-1 + min-w-0 on the cards: truncated (nowrap) text must not
+          widen a card past the screen on phones */}
+      <div className={`container mx-auto grid max-w-5xl grid-cols-1 gap-3 px-4 sm:gap-4 ${cards.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         {cards.map(({ key, anchor, icon: Icon, blurb, iconBg, glow, accent }) => {
           const data = listings[key];
           const thumbs = data.items.filter((p: any) => p.images?.length).slice(0, 3);
@@ -51,9 +53,9 @@ export function CategoryCards({ listings, loading }: { listings: Listings; loadi
               key={key}
               type="button"
               onClick={() => scrollTo(anchor)}
-              className={`group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-lg shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${glow} dark:border-gray-800 dark:bg-gray-900`}
+              className={`group flex w-full min-w-0 items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3.5 text-left sm:gap-4 sm:p-4 shadow-lg shadow-black/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${glow} dark:border-gray-800 dark:bg-gray-900`}
             >
-              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${iconBg} text-white shadow-md`}>
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${iconBg} text-white shadow-md sm:h-11 sm:w-11`}>
                 <Icon className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
@@ -70,7 +72,7 @@ export function CategoryCards({ listings, loading }: { listings: Listings; loadi
                 </span>
               )}
               <span className="shrink-0 text-right">
-                <span className="block text-2xl font-extrabold leading-none text-gray-900 dark:text-white">{loading ? '–' : data.total}</span>
+                <span className="block text-xl font-extrabold leading-none text-gray-900 sm:text-2xl dark:text-white">{loading ? '–' : data.total}</span>
                 <span className={`text-[10px] font-semibold uppercase tracking-wider ${accent}`}>available</span>
               </span>
               <ArrowRight className="h-4 w-4 shrink-0 text-gray-400 transition-all group-hover:translate-x-0.5 group-hover:text-gray-900 dark:group-hover:text-white" />

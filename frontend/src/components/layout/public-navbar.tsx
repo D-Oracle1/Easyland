@@ -59,11 +59,10 @@ export function PublicNavbar({ currentPage }: PublicNavbarProps) {
             {logoUrl ? (
               scrolled ? (
                 <>
-                  <BrandLogo src={logoUrl} alt={companyName} on="light" className="w-8 h-8 dark:hidden" />
-                  <BrandLogo src={logoUrl} alt={companyName} on="dark" className="hidden w-8 h-8 dark:block" />
+                  <BrandLogo src={logoUrl} alt={companyName} className="w-9 h-9 rounded-xl shadow-sm" />
                 </>
               ) : (
-                <BrandLogo src={logoUrl} alt={companyName} on="dark" className="w-8 h-8" />
+                <BrandLogo src={logoUrl} alt={companyName} className="w-9 h-9 rounded-xl shadow-sm" />
               )
             ) : (
               <div className={cn(

@@ -16,11 +16,17 @@ const TO = '#0d2b1c';
  *   /api/app-icon?size=512            square tile (Apple touch icon)
  *   /api/app-icon?size=512&rounded=1  rounded tile (favicon, Android "any")
  *   /api/app-icon?size=512&maskable=1 extra padding for Android's adaptive mask
+ *   …&splash=1                        launch-screen variant: Android draws the
+ *                                     largest manifest icon on its launch screen at
+ *                                     a fixed size, so this shrinks the visible
+ *                                     logo (a small tile on transparency / a small
+ *                                     logo on the maskable square)
  */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const size = Math.min(1024, Math.max(16, Number(url.searchParams.get('size')) || 512));
   const maskable = url.searchParams.get('maskable') === '1';
+  const splash = url.searchParams.get('splash') === '1';
 
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
   const domain = host.split(':')[0];
@@ -48,15 +54,16 @@ export async function GET(req: NextRequest) {
   // Corners are only rounded on request (favicon/Android "any"); iOS rounds
   // touch icons itself and would show transparent corners as black.
   const rounded = url.searchParams.get('rounded') === '1' && !maskable;
-  const logoSize = Math.round(size * (maskable ? 0.52 : 0.64));
-  const radius = rounded ? Math.round(size * 0.22) : 0;
+  // Splash (non-maskable): draw a smaller tile centred on transparency
+  const tile = splash && !maskable ? Math.round(size * 0.56) : size;
+  const logoSize = Math.round(maskable ? size * (splash ? 0.34 : 0.52) : tile * 0.64);
+  const radius = rounded || (splash && !maskable) ? Math.round(tile * 0.22) : 0;
 
-  return new ImageResponse(
-    (
+  const tileEl = (
       <div
         style={{
-          width: '100%',
-          height: '100%',
+          width: tile,
+          height: tile,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -68,11 +75,16 @@ export async function GET(req: NextRequest) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo} width={logoSize} height={logoSize} style={{ objectFit: 'contain' }} alt="" />
         ) : (
-          <div style={{ color: 'white', fontSize: Math.round(size * 0.5), fontWeight: 800 }}>
+          <div style={{ color: 'white', fontSize: Math.round(tile * 0.5), fontWeight: 800 }}>
             {name.trim().charAt(0).toUpperCase()}
           </div>
         )}
       </div>
+  );
+
+  return new ImageResponse(
+    tile === size ? tileEl : (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{tileEl}</div>
     ),
     {
       width: size,

@@ -177,7 +177,7 @@ export default function BalanceSheetPage() {
               {/* Branded Header */}
               <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
                 {branding.logo && (
-                  <BrandLogo src={branding.logo} alt={branding.companyName} on="light" className="h-12 mx-auto mb-3" />
+                  <BrandLogo src={branding.logo} alt={branding.companyName} className="h-12 w-12 rounded-xl mx-auto mb-3" />
                 )}
                 <h1 className="text-2xl font-bold text-gray-900">{branding.companyName ?? 'Company'}</h1>
                 <h2 className="text-lg font-semibold text-gray-600 mt-1">Balance Sheet</h2>

@@ -449,10 +449,8 @@ export function Sidebar({
                 </div>
               )
             ) : branding.logo ? (
-              // White tile so the green leaf + letterform stay visible on the green sidebar
-              <div className="w-10 h-10 rounded-xl bg-white shadow-sm ring-1 ring-black/5 flex items-center justify-center shrink-0 p-1">
-                <BrandLogo src={getImageUrl(branding.logo)} alt={branding.companyName || 'Logo'} on="light" className="w-full h-full" />
-              </div>
+              // The app-icon tile (logo on the green square), lifted off the green sidebar by a soft ring
+              <BrandLogo src={branding.logo} alt={branding.companyName || 'Logo'} className="w-10 h-10 shrink-0 rounded-xl shadow-md ring-1 ring-white/25" />
             ) : branding.companyName ? (
               <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5 text-white" />

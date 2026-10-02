@@ -92,7 +92,7 @@ export function HomeHero({
   ];
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#07170f] pb-24 pt-28 md:pb-28 md:pt-32">
+    <section className="relative isolate overflow-hidden bg-[#07170f] pb-20 pt-24 md:pb-28 md:pt-32">
       {/* Ambient light */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-32 top-10 h-[420px] w-[420px] rounded-full bg-emerald-500/25 blur-[120px]" />
@@ -109,9 +109,9 @@ export function HomeHero({
         />
       </div>
 
-      <div className="container mx-auto grid items-center gap-14 px-4 lg:grid-cols-[1.05fr_1fr]">
-        {/* Copy + search */}
-        <div>
+      <div className="container mx-auto grid items-center gap-8 px-4 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+        {/* Copy + search (second on phones, so the image catches the eye first) */}
+        <div className="min-w-0">
           <motion.div variants={fadeUp} initial="hidden" animate="show" custom={0}
             className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-emerald-100 backdrop-blur">
             <span className="relative flex h-2 w-2">
@@ -122,7 +122,7 @@ export function HomeHero({
           </motion.div>
 
           <motion.h1 variants={fadeUp} initial="hidden" animate="show" custom={1}
-            className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[4.1rem]">
+            className="text-[2.25rem] font-extrabold leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-[4.1rem]">
             {heroTitle}{' '}
             <span className="bg-gradient-to-r from-emerald-300 via-lime-200 to-amber-200 bg-clip-text text-transparent">
               {heroTitleAccent}
@@ -130,13 +130,13 @@ export function HomeHero({
           </motion.h1>
 
           <motion.p variants={fadeUp} initial="hidden" animate="show" custom={2}
-            className="mt-6 max-w-xl text-base leading-relaxed text-white/65 md:text-lg">
+            className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/65 sm:mt-6 md:text-lg">
             {heroSubtitle}
           </motion.p>
 
           {/* Glass search */}
           <motion.div variants={fadeUp} initial="hidden" animate="show" custom={3}
-            className="mt-9 max-w-xl rounded-3xl border border-white/10 bg-white/[0.07] p-2.5 shadow-2xl shadow-black/30 backdrop-blur-xl">
+            className="mt-7 max-w-xl rounded-3xl border border-white/10 bg-white/[0.07] p-2.5 shadow-2xl shadow-black/30 backdrop-blur-xl">
             <div className="flex gap-1 px-1 pb-2 pt-1" role="tablist" aria-label="Property category">
               {TABS.map(({ value, label, icon: Icon }) => (
                 <button
@@ -177,25 +177,25 @@ export function HomeHero({
           </motion.div>
 
           {/* Live stats */}
-          <motion.dl variants={fadeUp} initial="hidden" animate="show" custom={4} className="mt-9 flex flex-wrap gap-x-10 gap-y-5">
+          <motion.dl variants={fadeUp} initial="hidden" animate="show" custom={4} className="mt-8 grid grid-cols-2 gap-x-4 gap-y-5 sm:mt-9 sm:flex sm:flex-wrap sm:gap-x-10">
             {liveStats.map((s) => (
-              <div key={s.label} className="flex flex-col-reverse border-l-2 border-emerald-400/60 pl-4">
-                <dt className="text-xs uppercase tracking-wider text-white/50">{s.label}</dt>
-                <dd className="text-3xl font-bold text-white">{s.value}</dd>
+              <div key={s.label} className="flex min-w-0 flex-col-reverse border-l-2 border-emerald-400/60 pl-3 sm:pl-4">
+                <dt className="text-[11px] uppercase leading-snug tracking-wider text-white/50 sm:text-xs">{s.label}</dt>
+                <dd className="text-2xl font-bold text-white sm:text-3xl">{s.value}</dd>
               </div>
             ))}
           </motion.dl>
         </div>
 
-        {/* Image showcase */}
+        {/* Image showcase — first on phones */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          className="relative mx-auto w-full max-w-[560px]"
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+          className="relative order-first mx-auto w-full max-w-[560px] lg:order-none"
         >
           <div aria-hidden className="absolute -inset-4 -z-10 rounded-[2.75rem] bg-gradient-to-br from-emerald-400/30 via-transparent to-amber-300/20 blur-2xl" />
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/5 shadow-2xl">
+          <div className="relative aspect-[5/4] overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5 shadow-2xl sm:aspect-[4/5] sm:rounded-[2.25rem]">
             {images.map((src, i) => (
               <div key={src} className="absolute inset-0 transition-all duration-[1200ms] ease-out"
                 style={{ opacity: i === slide ? 1 : 0, transform: i === slide ? 'scale(1)' : 'scale(1.04)' }}>
@@ -216,8 +216,8 @@ export function HomeHero({
             {/* Latest listing */}
             {latest && (
               <Link href={`/properties/${latest.id}`}
-                className="group absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/85 p-2.5 pr-4 shadow-xl backdrop-blur-md transition-transform hover:-translate-y-0.5 dark:bg-gray-900/85 sm:inset-x-5 sm:bottom-5">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-emerald-100">
+                className="group absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/85 p-2 pr-3 sm:p-2.5 sm:pr-4 shadow-xl backdrop-blur-md transition-transform hover:-translate-y-0.5 dark:bg-gray-900/85 sm:inset-x-5 sm:bottom-5">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-emerald-100 sm:h-14 sm:w-14">
                   {latest.images?.[0] ? (
                     <Image src={abs(latest.images[0])} alt="" fill sizes="56px" className="object-cover" />
                   ) : (
