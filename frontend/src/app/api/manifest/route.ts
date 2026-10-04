@@ -18,8 +18,9 @@ export async function GET(req: NextRequest) {
   let companyName = 'Easyland';
   let shortName = 'Easyland';
   let description = 'Enterprise-grade PropTech platform for managing realtors, properties, and clients';
-  // Brand CTA green. Launch background is white, like the in-app splash, which
-  // starts with the same small square tile Android shows (see lib/brand-colors).
+  // Brand CTA green. Launch background = the maskable icon's green, so Android's
+  // launch screen is plain green with the logo; the in-app splash continues from
+  // that exact frame (see lib/brand-colors).
   let themeColor = '#15803d';
   const bgColor = LAUNCH_BG;
   let icons = DEFAULT_ICONS;
@@ -49,15 +50,13 @@ export async function GET(req: NextRequest) {
           if (pwa.splashAnimation) splashAnimation = pwa.splashAnimation;
         }
 
-        // Generated icons: logo on the brand tile (always has contrast), plus
-        // a padded maskable version for Android's adaptive icon shapes.
+        // Generated icons: the bold logo on the green brand tile — rounded for
+        // "any", full-bleed square for maskable (Android shapes it). No white.
         icons = [
           { src: `/api/app-icon?size=192&rounded=1&v=${ICON_VERSION}`, sizes: '192x192', type: 'image/png', purpose: 'any' },
-          // Home screen uses the 192s (bold logo); Android's launch screen uses the
-          // 512s, which are the small rounded-square tile on white/transparency.
-          { src: `/api/app-icon?size=512&splash=1&v=${ICON_VERSION}`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: `/api/app-icon?size=512&rounded=1&v=${ICON_VERSION}`, sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: `/api/app-icon?size=192&maskable=1&v=${ICON_VERSION}`, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-          { src: `/api/app-icon?size=512&maskable=1&splash=1&v=${ICON_VERSION}`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: `/api/app-icon?size=512&maskable=1&v=${ICON_VERSION}`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ];
       }
     } catch {

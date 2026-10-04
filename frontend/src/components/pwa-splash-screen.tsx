@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { isInstalledApp } from '@/lib/pwa';
-import { ICON_VERSION, LAUNCH_TILE_PX } from '@/lib/brand-colors';
+import { ICON_VERSION, LAUNCH_LOGO_PX, LAUNCH_TILE_PX, MASKABLE_BG } from '@/lib/brand-colors';
 
-/** The rounded-square app tile — the same tile Android's launch screen shows. */
-const SPLASH_TILE = `/api/app-icon?size=256&rounded=1&v=${ICON_VERSION}`;
+/** The logo alone (no tile) — sized like Android's launch-screen logo. */
+const SPLASH_LOGO = `/api/app-icon?size=256&bare=1&v=${ICON_VERSION}`;
+/** Logo size inside the final tile (same 64% as the app tile). */
+const TILE_LOGO_PX = LAUNCH_TILE_PX * 0.64;
 
 /** Splash stays until this long after launch (navigation start) … */
 const HOLD_MS = 3600;
@@ -16,11 +18,12 @@ const FADE_MS = 600;
 /**
  * Launch splash for the installed app.
  *
- * Android 12+ always shows its own launch screen first (it cannot be disabled):
- * our 512px launch icon, i.e. the small rounded-square app tile on white. This
- * splash starts as an exact copy of that frame — the same 80px tile, centred —
- * so the hand-over is invisible and the two read as one longer splash. Then the
- * doodle pattern, tile shadow and loading bar fade in and the tile breathes.
+ * Android always shows its own launch screen first (it cannot be disabled):
+ * plain brand green with the logo in the middle. This splash starts on exactly
+ * that frame, then the green shrinks into the small rounded-square app tile and
+ * the logo scales down into it, revealing the white doodle background; the
+ * shadow and loading bar fade in and the tile breathes until the app is ready.
+ * (iOS has no launch screen of its own, so it simply plays the same animation.)
  *
  * Stability: it is server-rendered and shown purely by CSS (display-mode media
  * query in globals.css), so it covers the page from the very first paint — no
@@ -71,22 +74,32 @@ export function PWASplashScreen() {
         style={{ backgroundImage: "url('/splash-doodle.webp')", backgroundRepeat: 'repeat', backgroundSize: '320px' }}
       />
 
-      {/* Same tile, size and position as Android's launch-screen icon */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={SPLASH_TILE}
-        alt=""
-        width={LAUNCH_TILE_PX}
-        height={LAUNCH_TILE_PX}
-        fetchPriority="high"
-        className="pwa-splash-logo absolute left-1/2 top-1/2 rounded-[18px]"
-        style={{
-          width: LAUNCH_TILE_PX,
-          height: LAUNCH_TILE_PX,
-          marginLeft: -LAUNCH_TILE_PX / 2,
-          marginTop: -LAUNCH_TILE_PX / 2,
-        }}
-      />
+      {/* Starts as Android's launch frame (full green + logo), then shrinks into the tile */}
+      <div className="pwa-splash-mark absolute inset-0">
+        <div
+          className="pwa-splash-shadow absolute left-1/2 top-1/2 rounded-[18px]"
+          style={{ width: LAUNCH_TILE_PX, height: LAUNCH_TILE_PX, marginLeft: -LAUNCH_TILE_PX / 2, marginTop: -LAUNCH_TILE_PX / 2 }}
+        />
+        <div className="pwa-splash-plate absolute inset-0" style={{ background: MASKABLE_BG }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={SPLASH_LOGO}
+          alt=""
+          width={LAUNCH_LOGO_PX}
+          height={LAUNCH_LOGO_PX}
+          fetchPriority="high"
+          className="pwa-splash-logo absolute left-1/2 top-1/2 max-w-none"
+          style={
+            {
+              width: LAUNCH_LOGO_PX,
+              height: LAUNCH_LOGO_PX,
+              marginLeft: -LAUNCH_LOGO_PX / 2,
+              marginTop: -LAUNCH_LOGO_PX / 2,
+              '--logo-end': TILE_LOGO_PX / LAUNCH_LOGO_PX,
+            } as React.CSSProperties
+          }
+        />
+      </div>
 
       {/* Loading bar, below the tile so the tile stays exactly centred */}
       <div
