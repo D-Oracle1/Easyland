@@ -249,30 +249,28 @@ export default function AboutPage() {
 
       {/* ── 5. MISSION & VISION BANNER ─────────────────────────────── */}
       {(mission.missionContent || mission.visionContent) && (
-      <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-primary/95" />
-        {heroImage && (
-          <Image src={heroImage} alt="" fill className="object-cover opacity-10 mix-blend-luminosity" />
-        )}
+      <section className="relative py-20 px-4 overflow-hidden bg-brand-deep">
+        {/* Solid deep brand green (as the homepage's dark band): the photo used to show
+            through here and the translucent cards left body text well below 4.5:1 */}
         <div className="container mx-auto relative z-10">
           {/* Mission & Vision cards */}
             <div className="grid md:grid-cols-2 gap-8">
               {mission.missionContent && (
-                <div className="bg-white/10 border border-white/20 rounded-2xl p-8 text-center">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-accent/20 flex items-center justify-center">
+                <div className="bg-white/[0.06] border border-white/15 rounded-2xl p-8 text-center">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-accent/15 flex items-center justify-center">
                     <Target className="w-7 h-7 text-accent" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{mission.missionTitle || 'Our Mission'}</h3>
-                  <p className="text-white/70 text-sm leading-relaxed">{plainText(mission.missionContent)}</p>
+                  <p className="text-white/90 text-[15px] leading-relaxed">{plainText(mission.missionContent)}</p>
                 </div>
               )}
               {mission.visionContent && (
-                <div className="bg-white/10 border border-white/20 rounded-2xl p-8 text-center">
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-accent/20 flex items-center justify-center">
+                <div className="bg-white/[0.06] border border-white/15 rounded-2xl p-8 text-center">
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-accent/15 flex items-center justify-center">
                     <Eye className="w-7 h-7 text-accent" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{mission.visionTitle || 'Our Vision'}</h3>
-                  <p className="text-white/70 text-sm leading-relaxed">{plainText(mission.visionContent)}</p>
+                  <p className="text-white/90 text-[15px] leading-relaxed">{plainText(mission.visionContent)}</p>
                 </div>
               )}
             </div>

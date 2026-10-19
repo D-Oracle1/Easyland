@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, Search, ChevronRight, Menu, X, Home, Zap, Images, Users, Phone, MessageCircle, FileText } from 'lucide-react';
+import { Building2, Search, ChevronRight, Menu, X, Home, Zap, Images, Phone, MessageCircle, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,6 @@ const NAV_LINKS = [
   { href: '/properties', label: 'Properties', icon: Building2 },
   { href: '/features', label: 'Features', icon: Zap },
   { href: '/gallery', label: 'Gallery', icon: Images },
-  { href: '/about', label: 'About Us', icon: Users },
   { href: '/about#company-profile', label: 'Company Profile', icon: FileText },
   { href: '/contact', label: 'Contact', icon: Phone },
 ];
@@ -29,6 +28,8 @@ export function PublicNavbar({ currentPage }: PublicNavbarProps) {
   const pathname = usePathname();
   const branding = useBranding();
   const activeHref = currentPage ?? pathname;
+  // Links may carry a section hash (/about#company-profile); match on the path
+  const isActive = (href: string) => activeHref === href.split('#')[0];
 
   // Close the menu on navigation; lock page scroll while it is open
   useEffect(() => { setMenuOpen(false); }, [pathname]);
@@ -111,7 +112,7 @@ export function PublicNavbar({ currentPage }: PublicNavbarProps) {
                 href={link.href}
                 className={cn(
                   'relative px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200',
-                  activeHref === link.href
+                  isActive(link.href)
                     ? scrolled
                       ? 'text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-900/30'
                       : 'text-white bg-white/20'
@@ -214,7 +215,7 @@ export function PublicNavbar({ currentPage }: PublicNavbarProps) {
 
         <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Site">
           {NAV_LINKS.map(({ href, label, icon: Icon }) => {
-            const active = activeHref === href;
+            const active = isActive(href);
             return (
               <Link key={href} href={href} tabIndex={menuOpen ? 0 : -1}
                 className={cn(

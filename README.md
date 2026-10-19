@@ -31,8 +31,7 @@ Currency: **Nigerian Naira (₦ / NGN)** throughout all interfaces and reports.
 | App | Description | Deploy |
 |-----|-------------|--------|
 | `backend/` | NestJS REST API — all business logic | Vercel (`npx vercel --prod` from `backend/`) |
-| `frontend/` | Next.js 16 — tenant-facing dashboard (all roles) | Vercel (`npx vercel --prod` from root) |
-| `super-admin/` | Standalone Next.js app — global Super Admin panel | Vercel (`npx vercel --prod` from `super-admin/`) |
+| `frontend/` | Next.js 16 — public website, tenant dashboards (all roles) and the Super Admin panel (`/dashboard/super-admin`) | Vercel (`npx vercel --prod` from `frontend/`) |
 
 ---
 
@@ -57,9 +56,8 @@ Currency: **Nigerian Naira (₦ / NGN)** throughout all interfaces and reports.
 - **PWA** support (service worker via `next-pwa`)
 
 ### Super Admin
-- **Standalone Next.js** app (independent auth, own `package.json`)
-- Connects to the same backend API with a super-admin JWT
-- Pages: Dashboard, Companies, Analytics, Notifications, Settings
+- Part of the frontend app at `/dashboard/super-admin` (same backend API, `SUPER_ADMIN` role)
+- Pages: Overview, Companies, Subsidiaries, Sales, Analytics, Notifications, Support, Settings
 
 ---
 
@@ -181,43 +179,28 @@ rms-platform/
 │       │   ├── realtor/         # Realtor dashboard
 │       │   ├── client/          # Client portal
 │       │   ├── staff/           # Staff portal
-│       │   └── hr/              # HR portal
+│       │   ├── hr/              # HR portal
+│       │   └── super-admin/     # Super Admin panel (all tenants)
 │       ├── components/
 │       │   └── icons/
 │       │       └── naira-sign.tsx  # Custom ₦ icon (replaces DollarSign)
 │       └── lib/
 │           └── utils.ts         # formatCurrency (NGN/₦), formatDate, etc.
-│
-└── super-admin/                 # Standalone Super Admin Next.js app
-    └── src/
-        ├── app/dashboard/
-        │   ├── page.tsx         # Overview — companies, revenue, users
-        │   ├── companies/       # Tenant list, activate/deactivate
-        │   ├── analytics/       # Cross-tenant analytics
-        │   ├── notifications/   # Platform-wide notifications
-        │   └── settings/        # Platform settings
-        └── components/
-            └── icons/
-                └── naira-sign.tsx
 ```
 
 ---
 
 ## Deployment
 
-All three apps deploy independently to Vercel.
+Both apps deploy independently to Vercel.
 
 ```bash
 # Deploy backend
 cd backend
 npx vercel --prod
 
-# Deploy frontend (from root)
-cd ..
-npx vercel --prod
-
-# Deploy super-admin
-cd super-admin
+# Deploy frontend
+cd ../frontend
 npx vercel --prod
 ```
 
