@@ -28,6 +28,15 @@ import { useBranding, getCompanyName } from '@/hooks/use-branding';
 import { hasSession } from '@/lib/auth-storage';
 import { api, getImageUrl } from '@/lib/api';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
+import { propertyHref } from '@/lib/property-url';
+import { ListingDetailsSection, ListingPricing } from '@/components/property/listing-details-section';
+import {
+  IMAGE_CATEGORY_LABELS,
+  UNCATEGORISED_IMAGE_LABEL,
+  isApartmentListing,
+  type ImageCategory,
+  type ListingDetails,
+} from '@/lib/listing-details';
 
 function formatPrice(price: number): string {
   if (price >= 1000000000) return `₦${(price / 1000000000).toFixed(2)}B`;
@@ -57,6 +66,10 @@ export default function PropertyDetailPage() {
         const res = await api.get(`/properties/listed/${params.id}`);
         const data = res?.data || res;
         setProperty(data);
+        // Older links use the id: show the readable address without reloading
+        if (data?.slug && params.id !== data.slug) {
+          window.history.replaceState(null, '', propertyHref(data) + window.location.search + window.location.hash);
+        }
       } catch {
         setError('Property not found or no longer listed.');
       } finally {
@@ -89,7 +102,22 @@ export default function PropertyDetailPage() {
     );
   }
 
-  const images = property.images || [];
+  const details: ListingDetails | null = property.listingDetails || null;
+  const apartment = isApartmentListing(property.type);
+  // Approved CMS images carry a category and alt text; otherwise fall back to the listing's photos,
+  // which on apartment listings are captioned so they never imply a finished or in-progress build.
+  const gallery: { src: string; alt: string; caption?: string }[] = details?.images?.items?.length
+    ? details.images.items.filter((img) => img.url).map((img, i) => ({
+        src: img.url!,
+        alt: img.alt || `${property.title} — image ${i + 1}`,
+        caption: img.category ? IMAGE_CATEGORY_LABELS[img.category as ImageCategory] : UNCATEGORISED_IMAGE_LABEL,
+      }))
+    : (property.images || []).map((src: string, i: number) => ({
+        src,
+        alt: `${property.title} — image ${i + 1}`,
+        caption: apartment ? UNCATEGORISED_IMAGE_LABEL : undefined,
+      }));
+  const images = gallery.map((g) => g.src);
   const realtorName = property.realtor
     ? `${property.realtor.user.firstName} ${property.realtor.user.lastName}`
     : `${companyName} Agent`;
@@ -115,17 +143,29 @@ export default function PropertyDetailPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Right Column — Price & Agent (shows FIRST on mobile) */}
-          <div className="lg:col-span-1 lg:order-2">
+          <div className="lg:col-span-1 lg:order-2 min-w-0">
             <div className="bg-white rounded-2xl p-6 shadow-lg lg:sticky lg:top-24">
-              <div className="text-sm text-gray-500 mb-1">Listed Price</div>
-              <div className="text-3xl font-bold text-primary mb-1">
-                {formatPrice(Number(property.price))}
-              </div>
-              {property.pricePerSqm && (
-                <div className="text-sm text-gray-500 mb-4">
-                  {formatPrice(Number(property.pricePerSqm))} / plot
-                </div>
-              )}
+              <ListingPricing
+                details={details}
+                fallback={
+                  // Land is sold per plot; the estate total isn't published (it would reveal the plot count)
+                  Number(property.pricePerSqm) > 0 ? (
+                    <>
+                      <div className="text-sm text-gray-500 mb-1">Price per plot</div>
+                      <div className="text-3xl font-bold text-primary mb-1">
+                        {formatPrice(Number(property.pricePerSqm))}
+                      </div>
+                    </>
+                  ) : property.price != null ? (
+                    <>
+                      <div className="text-sm text-gray-500 mb-1">Listed Price</div>
+                      <div className="text-3xl font-bold text-primary mb-1">
+                        {formatPrice(Number(property.price))}
+                      </div>
+                    </>
+                  ) : null
+                }
+              />
 
               {/* Agent Card */}
               <div className="border-t border-gray-100 pt-4 mt-4">
@@ -158,7 +198,7 @@ export default function PropertyDetailPage() {
 
               {(() => {
                 const token = hasSession();
-                const purchaseUrl = `/properties/${property.id}/purchase`;
+                const purchaseUrl = propertyHref(property, '/purchase');
                 const href = token
                   ? purchaseUrl
                   : `/auth/login?redirect=${encodeURIComponent(purchaseUrl)}`;
@@ -181,7 +221,7 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Left Column — Details (shows SECOND on mobile) */}
-          <div className="lg:col-span-2 lg:order-1 space-y-6">
+          <div className="lg:col-span-2 lg:order-1 space-y-6 min-w-0">
             {/* Image Gallery */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
               <div className="relative h-[280px] sm:h-[400px] md:h-[480px]">
@@ -189,20 +229,27 @@ export default function PropertyDetailPage() {
                   <>
                     <Image
                       src={resolveImageSrc(images[activeImage])}
-                      alt={property.title}
+                      alt={gallery[activeImage]?.alt || property.title}
                       fill
                       className="object-cover"
                     />
+                    {gallery[activeImage]?.caption && (
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 px-4 py-2 text-xs text-white">
+                        {gallery[activeImage].caption}
+                      </div>
+                    )}
                     {images.length > 1 && (
                       <>
                         <button
                           onClick={() => setActiveImage(activeImage > 0 ? activeImage - 1 : images.length - 1)}
+                          aria-label="Previous image"
                           className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-lg transition-all"
                         >
                           <ChevronLeft className="w-5 h-5 text-gray-700" />
                         </button>
                         <button
                           onClick={() => setActiveImage(activeImage < images.length - 1 ? activeImage + 1 : 0)}
+                          aria-label="Next image"
                           className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center shadow-lg transition-all"
                         >
                           <ChevronRight className="w-5 h-5 text-gray-700" />
@@ -234,11 +281,13 @@ export default function PropertyDetailPage() {
                     <button
                       key={index}
                       onClick={() => setActiveImage(index)}
+                      aria-label={`Show image ${index + 1}`}
+                      aria-current={index === activeImage}
                       className={`relative w-20 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
                         index === activeImage ? 'border-accent' : 'border-transparent opacity-60 hover:opacity-100'
                       }`}
                     >
-                      <Image src={resolveImageSrc(img)} alt={`View ${index + 1}`} fill className="object-cover" />
+                      <Image src={resolveImageSrc(img)} alt="" fill className="object-cover" />
                     </button>
                   ))}
                 </div>
@@ -271,7 +320,7 @@ export default function PropertyDetailPage() {
                     <div className="text-xs text-gray-500">Bathrooms</div>
                   </div>
                 )}
-                {property.area != null && (
+                {property.area != null && property.type !== 'LAND' && (
                   <div className="bg-gray-50 rounded-xl p-4 text-center">
                     <Maximize className="w-6 h-6 text-accent mx-auto mb-1" />
                     <div className="text-lg font-bold text-gray-900">{Number(property.area).toLocaleString()}</div>
@@ -287,21 +336,13 @@ export default function PropertyDetailPage() {
                 )}
               </div>
 
-              {/* For Land Properties */}
-              {property.type === 'LAND' && (
+              {/* For Land Properties — the number of plots is internal and never shown */}
+              {property.type === 'LAND' && Number(property.pricePerSqm) > 0 && (
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  {property.pricePerSqm && (
-                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
-                      <div className="text-sm text-gray-500">Price per plot</div>
-                      <div className="text-lg font-bold text-accent">{formatPrice(Number(property.pricePerSqm))}</div>
-                    </div>
-                  )}
-                  {property.numberOfPlots && (
-                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
-                      <div className="text-sm text-gray-500">Number of Plots</div>
-                      <div className="text-lg font-bold text-accent">{property.numberOfPlots}</div>
-                    </div>
-                  )}
+                  <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+                    <div className="text-sm text-gray-500">Price per plot</div>
+                    <div className="text-lg font-bold text-accent">{formatPrice(Number(property.pricePerSqm))}</div>
+                  </div>
                 </div>
               )}
 
@@ -330,6 +371,8 @@ export default function PropertyDetailPage() {
                 </div>
               )}
             </div>
+
+            <ListingDetailsSection details={details} propertyTitle={property.title} apartment={apartment} />
           </div>
         </div>
       </div>

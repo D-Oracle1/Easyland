@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
+  ClipboardList,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ import { AreaUnitSelect } from '@/components/area-unit-select';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { StatTile, toneFromClass } from '@/components/dashboard/stat-tile';
+import { ListingDetailsEditor } from '@/components/property/listing-details-editor';
 
 const propertyTypes = [
   { value: 'LAND', label: 'Land', icon: LandPlot },
@@ -133,6 +135,7 @@ export default function PropertiesPage() {
   const [editUploadedImages, setEditUploadedImages] = useState<string[]>([]);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [detailsProperty, setDetailsProperty] = useState<any>(null);
 
   useEffect(() => {
     fetchProperties();
@@ -851,11 +854,15 @@ export default function PropertiesPage() {
                           )}
                         </div>
                       )}
-                      <div className="flex items-center justify-between pt-3 border-t">
+                      <div className="flex flex-wrap items-center justify-between gap-y-2 pt-3 border-t">
                         <span className="text-sm text-muted-foreground">
                           {property.realtor?.user ? `${property.realtor.user.firstName} ${property.realtor.user.lastName}` : 'Unassigned'}
                         </span>
                         <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setDetailsProperty(property)}>
+                            <ClipboardList className="w-3 h-3 mr-1" />
+                            Details
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => openEditDialog(property)}>
                             <Pencil className="w-3 h-3 mr-1" />
                             Edit
@@ -911,6 +918,13 @@ export default function PropertiesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ListingDetailsEditor
+        property={detailsProperty}
+        open={!!detailsProperty}
+        onOpenChange={(open) => { if (!open) setDetailsProperty(null); }}
+        onSaved={fetchProperties}
+      />
 
       {/* Edit Property Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

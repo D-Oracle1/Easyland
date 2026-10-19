@@ -49,23 +49,49 @@ export default function AboutPage() {
       .finally(() => setCmsLoading(false));
   }, [tenantReady]);
 
+  // The page shows a loader until CMS content arrives, so the browser's own
+  // jump to #company-profile happens too early — scroll once it has rendered.
+  useEffect(() => {
+    if (cmsLoading || window.location.hash !== '#company-profile') return;
+    requestAnimationFrame(() => document.getElementById('company-profile')?.scrollIntoView());
+  }, [cmsLoading]);
+
   const companyName  = cms?.branding?.companyName || 'Our Company';
   const about        = cms?.about        || {};
   const mission      = cms?.mission      || {};
   const coreValues   = cms?.core_values  || {};
   const stats        = cms?.stats        || {};
   const agents       = cms?.agents       || {};
+  const profile      = cms?.company_profile || {};
 
   const heroImage    = resolveImg(about.image || '');
   const storyImage   = resolveImg(about.storyImage || '');
 
   // Content helpers — handle non-string CMS values defensively
-  const plainText = (html: any) => (typeof html === 'string' ? html : '').replace(/<[^>]+>/g, '').trim();
+  const plainText = (html: any) => (typeof html === 'string' ? html : '')
+    .replace(/<\/(p|div|li|h[1-6])>|<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const aboutText  = plainText(about.content || '');
   const storyText  = plainText(about.story   || mission.missionContent || '');
-  const introParagraph = aboutText || `${companyName} is dedicated to transforming the real estate experience by combining deep market expertise with genuine client care. We believe every property transaction is a milestone — and we treat it that way. Our team of experienced professionals is committed to delivering unmatched value through transparent practices, innovative technology, and a passionate dedication to excellence in every interaction with our clients.`;
-  const introTitle = about.storyTitle || about.title || `${companyName} — Where Trust Meets Real Estate`;
+  const introParagraph = aboutText;
+  const introTitle = about.storyTitle || about.title || `About ${companyName}`;
+
+  // Company Profile — only fields the company has entered in the CMS are shown.
+  // The registration number is only ever displayed next to the registered name.
+  const portfolio: string[] = (Array.isArray(profile.portfolio) ? profile.portfolio : [])
+    .map((p: any) => (typeof p === 'string' ? p : p?.name || '').trim())
+    .filter(Boolean);
+  const profileFacts = [
+    { label: 'Registration number', value: profile.legalName ? profile.registrationNumber : '' },
+    { label: 'Established', value: profile.establishedYear },
+    { label: 'Ambition', value: profile.ambition },
+    { label: 'Sectors served', value: profile.sectors },
+  ].filter((f) => String(f.value ?? '').trim());
+  const hasProfile = profileFacts.length > 0 || portfolio.length > 0;
 
   // Service/value items — prefer about.items, fall back to coreValues.values
   const serviceItems: any[] = (about.items?.length ? about.items : coreValues.values) || [];
@@ -93,14 +119,16 @@ export default function AboutPage() {
       <PageHero eyebrow="Who we are" title="About Us" image={heroImage} breadcrumb="About Us" />
 
       {/* ── 2. INTRO — SINGLE JUSTIFIED PARAGRAPH ──────────────────── */}
-      <section className="py-20 px-4 bg-white">
+      <section id={hasProfile ? undefined : 'company-profile'} className="py-20 px-4 bg-white scroll-mt-24">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-6">
             {introTitle}
           </h2>
-          <p className="text-gray-600 leading-relaxed text-[15px] text-justify">
-            {introParagraph}
-          </p>
+          {introParagraph && (
+            <p className="text-gray-600 leading-relaxed text-[15px] text-justify">
+              {introParagraph}
+            </p>
+          )}
           {storyText && storyText !== aboutText && (
             <p className="text-gray-600 leading-relaxed text-[15px] text-justify mt-4">
               {storyText}
@@ -108,6 +136,43 @@ export default function AboutPage() {
           )}
         </div>
       </section>
+
+      {/* ── 2b. COMPANY PROFILE (target of the "Company Profile" links) ── */}
+      {hasProfile && (
+        <section id="company-profile" aria-labelledby="company-profile-heading" className="pb-20 px-4 bg-white scroll-mt-24">
+          <div className="container mx-auto">
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 p-6 md:p-10">
+              <span className="text-accent font-semibold text-sm uppercase tracking-wider">Company Profile</span>
+              <h2 id="company-profile-heading" className="text-2xl md:text-3xl font-bold text-gray-900 mt-2 mb-6">
+                {profile.legalName || companyName}
+              </h2>
+              {profileFacts.length > 0 && (
+                <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {profileFacts.map((f) => (
+                    <div key={f.label} className="rounded-2xl bg-white p-5 shadow-sm">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">{f.label}</dt>
+                      <dd className="mt-1 text-base font-semibold text-gray-900 break-words">{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {portfolio.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Portfolio</h3>
+                  <ul className="flex flex-wrap gap-2">
+                    {portfolio.map((name) => (
+                      <li key={name} className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm">
+                        <Building2 className="w-4 h-4 text-accent" aria-hidden="true" />
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── 3. SPLIT FULL-WIDTH IMAGES ─────────────────────────────── */}
       <section className="w-full flex flex-col md:flex-row h-[420px] md:h-[500px]">
@@ -125,9 +190,9 @@ export default function AboutPage() {
         <div className="relative flex-1 flex flex-col md:flex-row">
           <div className="relative flex-1 bg-primary/30">
             {storyImage ? (
-              <Image src={storyImage} alt="Our team" fill className="object-cover" />
+              <Image src={storyImage} alt="" fill className="object-cover" />
             ) : heroImage ? (
-              <Image src={heroImage} alt="Our team" fill className="object-cover opacity-80" />
+              <Image src={heroImage} alt="" fill className="object-cover opacity-80" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-accent/30 to-primary/40" />
             )}
@@ -135,7 +200,7 @@ export default function AboutPage() {
           </div>
           <div className="relative flex-1 bg-accent/20">
             {heroImage ? (
-              <Image src={heroImage} alt="Our office" fill className="object-cover opacity-70" />
+              <Image src={heroImage} alt="" fill className="object-cover opacity-70" />
             ) : (
               <div className="w-full h-full bg-gradient-to-tl from-primary/50 to-accent/20" />
             )}
@@ -144,19 +209,19 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 4. SOLUTIONS / SERVICES ────────────────────────────────── */}
+      {/* ── 4. SOLUTIONS / SERVICES / CORE VALUES ───────────────────── */}
+      {serviceItems.length > 0 && (
       <section className="py-20 px-4 bg-white">
         <div className="container mx-auto">
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              {about.whyTitle || 'We Provide Solutions For Your Real Estate Goals'}
+              {about.whyTitle || (about.items?.length ? 'What We Offer' : 'Our Core Values')}
             </h2>
-            <p className="text-gray-500 max-w-xl text-[15px]">
-              {about.whySubtitle || `Our expert team at ${companyName} covers every aspect of real estate — from acquisition to management, we've got you covered.`}
-            </p>
+            {about.whySubtitle && (
+              <p className="text-gray-500 max-w-xl text-[15px]">{about.whySubtitle}</p>
+            )}
           </div>
 
-          {serviceItems.length > 0 ? (
             <div className="grid md:grid-cols-3 gap-x-8 gap-y-8">
               {serviceItems.slice(0, 6).map((item: any, i: number) => {
                 const Icon = ICON_LIST[i % ICON_LIST.length];
@@ -178,47 +243,19 @@ export default function AboutPage() {
                 );
               })}
             </div>
-          ) : (
-            /* Default 6-item grid when no CMS data */
-            <div className="grid md:grid-cols-3 gap-x-8 gap-y-8">
-              {[
-                { title: 'Quality Properties',   desc: 'Carefully vetted properties that meet the highest standards of quality and value.' },
-                { title: 'Client Satisfaction',  desc: 'Your satisfaction is our priority — we go the extra mile every single time.' },
-                { title: 'Planning & Strategy',  desc: 'Smart investment strategies tailored to your financial goals and timeline.' },
-                { title: 'Expert Advisory',      desc: 'Deep market knowledge from a dedicated team with years of industry experience.' },
-                { title: 'Transparent Process',  desc: 'Clear communication and full transparency throughout every transaction.' },
-                { title: 'After-Sale Support',   desc: 'Our relationship doesn\'t end at closing — we support you long after the deal.' },
-              ].map((item, i) => {
-                const Icon = ICON_LIST[i % ICON_LIST.length];
-                return (
-                  <div key={i} className="flex items-start gap-4 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent transition-colors">
-                      <Icon className="w-5 h-5 text-accent group-hover:text-white transition-colors" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-accent/60">{String(i + 1).padStart(2, '0')}</span>
-                        <h3 className="font-semibold text-gray-900 text-sm">{item.title}</h3>
-                      </div>
-                      <p className="text-gray-500 text-[13px] leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </section>
+      )}
 
-      {/* ── 5. RECOGNITION / MISSION BANNER ───────────────────────── */}
+      {/* ── 5. MISSION & VISION BANNER ─────────────────────────────── */}
+      {(mission.missionContent || mission.visionContent) && (
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-primary/95" />
         {heroImage && (
-          <Image src={heroImage} alt="background" fill className="object-cover opacity-10 mix-blend-luminosity" />
+          <Image src={heroImage} alt="" fill className="object-cover opacity-10 mix-blend-luminosity" />
         )}
         <div className="container mx-auto relative z-10">
           {/* Mission & Vision cards */}
-          {(mission.missionContent || mission.visionContent) ? (
             <div className="grid md:grid-cols-2 gap-8">
               {mission.missionContent && (
                 <div className="bg-white/10 border border-white/20 rounded-2xl p-8 text-center">
@@ -239,28 +276,9 @@ export default function AboutPage() {
                 </div>
               )}
             </div>
-          ) : (
-            /* Default recognition badges */
-            <div className="flex flex-wrap justify-center gap-10">
-              {[
-                { year: '2024', title: 'Best Real Estate Agency' },
-                { year: '2023', title: 'Top Rated Service'       },
-                { year: '2022', title: 'Excellence Award'        },
-                { year: '2021', title: 'Client Choice Award'     },
-                { year: '2020', title: 'Market Leader'           },
-              ].map((badge) => (
-                <div key={badge.year} className="flex flex-col items-center gap-2 text-center min-w-[110px]">
-                  <div className="w-20 h-20 rounded-full border-2 border-accent/60 flex flex-col items-center justify-center bg-white/10">
-                    <span className="text-accent font-bold text-lg leading-none">{badge.year}</span>
-                    <Star className="w-4 h-4 text-accent/80 mt-1" fill="currentColor" />
-                  </div>
-                  <p className="text-white/80 text-xs font-medium leading-snug">{badge.title}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
+      )}
 
       {/* ── 6. STATS COUNTER ───────────────────────────────────────── */}
       {statItems.length > 0 && (
@@ -274,7 +292,7 @@ export default function AboutPage() {
                     <div className="text-sm font-semibold text-gray-700 mt-1">{stat.label}</div>
                   </div>
                   <p className="text-gray-500 text-sm leading-relaxed hidden sm:block flex-1">
-                    {stat.description || `${companyName} is proud of this achievement.`}
+                    {stat.description}
                   </p>
                 </div>
               ))}
@@ -284,6 +302,7 @@ export default function AboutPage() {
       )}
 
       {/* ── 7. TEAM MEMBERS ────────────────────────────────────────── */}
+      {teamMembers.length > 0 && (
       <section className="py-20 px-4 bg-white">
         <div className="container mx-auto">
           <div className="grid lg:grid-cols-[300px_1fr] gap-12 items-start">
@@ -305,8 +324,7 @@ export default function AboutPage() {
 
             {/* Right — agent cards */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {teamMembers.length > 0
-                ? teamMembers.slice(0, 3).map((member: any, i: number) => {
+              {teamMembers.slice(0, 3).map((member: any, i: number) => {
                     const photo = resolveImg(member.photo || member.image || member.avatar || '');
                     const name  = member.name  || `${member.firstName || ''} ${member.lastName || ''}`.trim() || 'Team Member';
                     const role  = (typeof member.role === 'string' ? member.role : member.role?.name) || member.title || 'Property Consultant';
@@ -327,24 +345,12 @@ export default function AboutPage() {
                         </div>
                       </div>
                     );
-                  })
-                : /* Default 3 placeholder cards */
-                  ['Property Consultant', 'Senior Agent', 'Investment Advisor'].map((role, i) => (
-                    <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
-                      <div className="h-56 bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                        <Users className="w-16 h-16 text-primary/20" />
-                      </div>
-                      <div className="p-4 text-center">
-                        <h3 className="font-semibold text-gray-900">{companyName} Expert</h3>
-                        <p className="text-sm text-accent mt-0.5">{role}</p>
-                      </div>
-                    </div>
-                  ))
-              }
+                  })}
             </div>
           </div>
         </div>
       </section>
+      )}
 
       {/* ── 8. CTA ─────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 px-4 bg-gray-50">
@@ -358,10 +364,6 @@ export default function AboutPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <Users className="w-36 h-36 text-green-400/10" strokeWidth={0.5} />
               </div>
-              <div className="absolute bottom-5 right-5 bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl px-4 py-3">
-                <div className="text-xl font-bold text-white">1,200+</div>
-                <div className="text-xs text-green-300/70">Happy Clients</div>
-              </div>
             </div>
             {/* Content */}
             <div className="flex flex-col justify-center p-8 md:p-12 lg:p-14 flex-1">
@@ -373,7 +375,7 @@ export default function AboutPage() {
                 Ready to Find Your Perfect Property?
               </h2>
               <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-sm">
-                Join hundreds of satisfied clients who trust {companyName} for their real estate journey. Expert guidance at every step.
+                Browse current listings or contact {companyName} to ask about a property.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link href="/properties">

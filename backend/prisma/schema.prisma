@@ -531,6 +531,8 @@ model ClientProfile {
 model Property {
   id                     String         @id @default(uuid())
   title                  String
+  // Public URL segment derived from the title (/properties/<slug>); see property/property-slug.ts
+  slug                   String?        @unique
   description            String?
   type                   PropertyType
   status                 PropertyStatus @default(AVAILABLE)
@@ -563,6 +565,10 @@ model Property {
   // Media
   images                 String[]       @default([])
   virtualTourUrl         String?
+
+  // Optional, CMS-edited public listing details (see property/listing-details.ts).
+  // Each section carries its own `approved` flag; unapproved sections never reach public endpoints.
+  listingDetails         Json?
 
   // Listing
   isListed               Boolean        @default(true)

@@ -216,6 +216,7 @@ CREATE TABLE "client_profiles" (
 CREATE TABLE "properties" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
+    "slug" TEXT,
     "description" TEXT,
     "type" "PropertyType" NOT NULL,
     "status" "PropertyStatus" NOT NULL DEFAULT 'AVAILABLE',
@@ -240,6 +241,7 @@ CREATE TABLE "properties" (
     "features" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "images" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "virtualTourUrl" TEXT,
+    "listingDetails" JSONB,
     "isListed" BOOLEAN NOT NULL DEFAULT true,
     "listedAt" TIMESTAMP(3),
     "ownerId" TEXT,
@@ -1189,6 +1191,9 @@ CREATE TABLE "_ChatParticipants" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "properties_slug_key" ON "properties"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_referralCode_key" ON "users"("referralCode");

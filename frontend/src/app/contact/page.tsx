@@ -45,6 +45,12 @@ export default function ContactPage() {
       .finally(() => setCmsLoading(false));
   }, []);
 
+  // Listing pages link here with ?subject=… so the enquiry names the property
+  useEffect(() => {
+    const subject = new URLSearchParams(window.location.search).get('subject');
+    if (subject) setForm((f) => (f.subject ? f : { ...f, subject: subject.slice(0, 200) }));
+  }, []);
+
   const contact = cms?.contact || {};
   const faq = cms?.faq || {};
 

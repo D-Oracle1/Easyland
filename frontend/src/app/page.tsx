@@ -294,9 +294,14 @@ export default function HomePage() {
                   ))}
                 </ul>
               )}
-              <Link href="/about" className="inline-flex items-center gap-2 rounded-full bg-green-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-600">
-                Learn more about us <ArrowRight className="h-4 w-4" />
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/about#company-profile" className="inline-flex items-center gap-2 rounded-full bg-green-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-600">
+                  Company Profile <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link href="/about" className="inline-flex items-center gap-2 rounded-full border border-green-700 px-6 py-3 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 dark:hover:bg-gray-900">
+                  Learn more about us
+                </Link>
+              </div>
             </div>
             <div className="relative order-1 lg:order-2">
               <div className="relative h-[380px] overflow-hidden rounded-[2rem] shadow-xl md:h-[440px]">

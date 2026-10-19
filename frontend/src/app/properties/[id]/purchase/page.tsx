@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { propertyHref } from '@/lib/property-url';
 import {
   ArrowLeft,
   Building2,
@@ -29,6 +30,7 @@ function formatPrice(price: number): string {
 export default function PurchasePage() {
   const params = useParams();
   const router = useRouter();
+  // URL segment: the readable slug, or the id on older links. Submit with the loaded property's real id.
   const propertyId = params.id as string;
   const branding = useBranding();
   const companyName = getCompanyName(branding);
@@ -70,6 +72,9 @@ export default function PurchasePage() {
       .then((res) => {
         const data = res?.data || res;
         setProperty(data);
+        if (data?.slug && propertyId !== data.slug) {
+          window.history.replaceState(null, '', propertyHref(data, '/purchase') + window.location.search);
+        }
       })
       .catch(() => {})
       .finally(() => setLoadingProperty(false));
@@ -101,7 +106,7 @@ export default function PurchasePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...form, propertyId }),
+        body: JSON.stringify({ ...form, propertyId: property?.id || propertyId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to submit');
@@ -166,7 +171,7 @@ export default function PurchasePage() {
       {/* Header */}
       <div className="bg-white dark:bg-primary-900 border-b border-gray-200 dark:border-primary-800">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href={`/properties/${propertyId}`}>
+          <Link href={property ? propertyHref(property) : `/properties/${propertyId}`}>
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" /> Back
             </Button>

@@ -20,6 +20,7 @@ import {
   Trash2,
   Upload,
   Landmark,
+  Building2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ const TABS = [
   { id: 'branding', label: 'Branding', icon: Palette },
   { id: 'hero', label: 'Hero', icon: Home },
   { id: 'about', label: 'About Us', icon: Info },
+  { id: 'company_profile', label: 'Company Profile', icon: Building2 },
   { id: 'mission', label: 'Mission & Vision', icon: Target },
   { id: 'core_values', label: 'Core Values', icon: Heart },
   { id: 'features', label: 'Features', icon: Zap },
@@ -79,6 +81,13 @@ export default function CmsPage() {
   }, [activeTab, fetchSection]);
 
   const handleSave = async () => {
+    if (activeTab === 'company_profile' && sectionData.establishedYear) {
+      const year = String(sectionData.establishedYear).trim();
+      if (!/^\d{4}$/.test(year) || Number(year) > new Date().getFullYear()) {
+        toast.error('Year established must be a four-digit year, not in the future');
+        return;
+      }
+    }
     setSaving(true);
     try {
       await api.put(`/cms/sections/${activeTab}`, { content: sectionData });
@@ -477,7 +486,7 @@ export default function CmsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-1 block">RC Number</label>
-                    <Input value={sectionData.rcNumber || ''} onChange={(e) => updateField('rcNumber', e.target.value)} placeholder="e.g. 7379240" />
+                    <Input value={sectionData.rcNumber || ''} onChange={(e) => updateField('rcNumber', e.target.value)} placeholder="e.g. RC 1234567" />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Payment Method</label>
@@ -628,6 +637,47 @@ export default function CmsPage() {
                 { key: 'description', label: 'Description', type: 'textarea' },
               ])}
             </div>
+          </div>
+        );
+
+      case 'company_profile':
+        return (
+          <div className="space-y-6">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-1">
+              <p className="text-xs text-blue-700 dark:text-blue-400">
+                Shown in the Company Profile section of the About Us page (linked as “Company Profile” in the site menu).
+                Leave a field empty to hide it. The company description is edited under About Us → First Paragraph;
+                vision and mission under Mission &amp; Vision; core values under Core Values.
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-400">
+                Enter legal details exactly as registered. The registration number is only shown next to the registered company name.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="cp-legal-name" className="text-sm font-medium mb-1 block">Registered company name</label>
+                <Input id="cp-legal-name" value={sectionData.legalName || ''} onChange={(e) => updateField('legalName', e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="cp-rc" className="text-sm font-medium mb-1 block">Registration number</label>
+                <Input id="cp-rc" value={sectionData.registrationNumber || ''} onChange={(e) => updateField('registrationNumber', e.target.value)} placeholder="e.g. RC 1234567" />
+              </div>
+              <div>
+                <label htmlFor="cp-year" className="text-sm font-medium mb-1 block">Year established</label>
+                <Input id="cp-year" inputMode="numeric" maxLength={4} value={sectionData.establishedYear || ''} onChange={(e) => updateField('establishedYear', e.target.value.replace(/\D/g, ''))} />
+              </div>
+              <div>
+                <label htmlFor="cp-ambition" className="text-sm font-medium mb-1 block">Ambition / tagline</label>
+                <Input id="cp-ambition" value={sectionData.ambition || ''} onChange={(e) => updateField('ambition', e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="cp-sectors" className="text-sm font-medium mb-1 block">Sectors served</label>
+              <Input id="cp-sectors" value={sectionData.sectors || ''} onChange={(e) => updateField('sectors', e.target.value)} placeholder="e.g. Residential, commercial and investment" />
+            </div>
+            {renderDynamicList('Portfolio (developments named by the company)', 'portfolio', [
+              { key: 'name', label: 'Development name' },
+            ])}
           </div>
         );
 

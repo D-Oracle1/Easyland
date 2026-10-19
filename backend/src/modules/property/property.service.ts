@@ -3,7 +3,28 @@ import { PrismaService } from '../../database/prisma.service';
 import { CacheService } from '../../common/services/cache.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
-import { PropertyStatus, PropertyType, DocumentType } from '@prisma/client';
+import { PropertyStatus, PropertyType, DocumentType, Prisma } from '@prisma/client';
+import { normalizeListingDetails, toPublicListingDetails } from './listing-details';
+import { UUID_RE, uniqueSlug } from './property-slug';
+
+/**
+ * Public (unauthenticated) view of a listing. The number of plots in a land
+ * estate is internal: hide it, and for land sold per plot also hide the
+ * estate totals that reveal it (total price ÷ price per plot, area ÷ plot size).
+ */
+export function toPublicProperty<T extends Record<string, any>>(property: T) {
+  const { listingDetails, ...rest } = property;
+  const out: Record<string, any> = { ...rest, listingDetails: toPublicListingDetails(listingDetails) };
+  if (out.type === PropertyType.LAND) {
+    delete out.numberOfPlots;
+    if (Number(out.pricePerSqm) > 0) {
+      for (const k of ['price', 'originalPrice', 'listingPrice', 'area', 'lotSize', 'priceHistory', 'appreciationPercentage']) {
+        delete out[k];
+      }
+    }
+  }
+  return out;
+}
 
 @Injectable()
 export class PropertyService {
@@ -16,6 +37,7 @@ export class PropertyService {
     const property = await this.prisma.property.create({
       data: {
         ...createPropertyDto,
+        slug: await uniqueSlug(this.prisma, createPropertyDto.title),
         originalPrice: createPropertyDto.price,
         realtorId: createPropertyDto.realtorId,
       },
@@ -218,9 +240,14 @@ export class PropertyService {
 
     const { priceChangeReason, ...updateData } = updatePropertyDto;
 
+    // The public URL follows the name: regenerate the slug when the title changes
+    const slug = (updateData.title && updateData.title !== property.title) || !property.slug
+      ? await uniqueSlug(this.prisma, updateData.title || property.title, id)
+      : undefined;
+
     const updated = await this.prisma.property.update({
       where: { id },
-      data: updateData,
+      data: { ...updateData, ...(slug ? { slug } : {}) },
     });
     await this.cacheService.invalidate('properties');
     return updated;
@@ -297,10 +324,23 @@ export class PropertyService {
       else if (types.length > 1) where.type = { in: types };
     }
     if (query.city) where.city = { contains: query.city, mode: 'insensitive' };
-    if (query.minPrice !== undefined && !isNaN(Number(query.minPrice)))
-      where.price = { ...where.price, gte: Number(query.minPrice) };
-    if (query.maxPrice !== undefined && !isNaN(Number(query.maxPrice)))
-      where.price = { ...where.price, lte: Number(query.maxPrice) };
+    // Land is sold per plot: filter it by price per plot, never by the estate total
+    // (which, with the per-plot price, would reveal the number of plots).
+    const range: Record<string, number> = {};
+    if (query.minPrice !== undefined && !isNaN(Number(query.minPrice))) range.gte = Number(query.minPrice);
+    if (query.maxPrice !== undefined && !isNaN(Number(query.maxPrice))) range.lte = Number(query.maxPrice);
+    if (Object.keys(range).length) {
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { type: { not: PropertyType.LAND }, price: range },
+            { type: PropertyType.LAND, pricePerSqm: range },
+            { type: PropertyType.LAND, pricePerSqm: null, price: range },
+          ],
+        },
+      ];
+    }
 
     const [properties, total] = await Promise.all([
       this.prisma.property.findMany({
@@ -320,14 +360,19 @@ export class PropertyService {
     ]);
 
     return {
-      data: properties,
+      // Details are only needed on the single-listing page
+      data: properties.map((p) => {
+        const { listingDetails, ...pub } = toPublicProperty(p);
+        return pub;
+      }),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
 
-  async findListedById(id: string) {
-    const property = await this.prisma.property.findUnique({
-      where: { id, isListed: true },
+  /** Public lookup by slug (/properties/harmony-gardens) or, for older links, by id. */
+  async findListedById(idOrSlug: string) {
+    const property = await this.prisma.property.findFirst({
+      where: { ...(UUID_RE.test(idOrSlug) ? { id: idOrSlug } : { slug: idOrSlug.toLowerCase() }), isListed: true },
       include: {
         realtor: {
           include: {
@@ -352,7 +397,25 @@ export class PropertyService {
       throw new NotFoundException('Property not found or not listed');
     }
 
-    return property;
+    return toPublicProperty(property);
+  }
+
+  async updateListingDetails(id: string, input: unknown) {
+    const property = await this.prisma.property.findUnique({ where: { id }, select: { id: true } });
+    if (!property) throw new NotFoundException('Property not found');
+
+    const listingDetails = normalizeListingDetails(input);
+    const updated = await this.prisma.property.update({
+      where: { id },
+      data: {
+        listingDetails: Object.keys(listingDetails).length
+          ? (listingDetails as Prisma.InputJsonValue)
+          : Prisma.DbNull,
+      },
+      select: { id: true, listingDetails: true, updatedAt: true },
+    });
+    await this.cacheService.invalidate('properties');
+    return updated;
   }
 
   async submitOffer(

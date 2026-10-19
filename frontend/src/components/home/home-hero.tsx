@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Sparkles, ArrowUpRight, LandPlot, Home, Users } from 'lucide-react';
 import { getImageUrl } from '@/lib/api';
+import { propertyHref } from '@/lib/property-url';
 import { FloatingBubbles } from '@/components/ui/floating-bubbles';
 import { CATEGORY_TYPES, CATEGORY_LABELS, categoryOf, type PropertyCategory } from '@/lib/property-categories';
 
@@ -209,7 +210,7 @@ export function HomeHero({
 
             {/* Latest listing */}
             {latest && (
-              <Link href={`/properties/${latest.id}`}
+              <Link href={propertyHref(latest)}
                 className="group absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/85 p-2 pr-3 sm:p-2.5 sm:pr-4 shadow-xl backdrop-blur-md transition-transform hover:-translate-y-0.5 dark:bg-gray-900/85 sm:inset-x-5 sm:bottom-5">
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-emerald-100 sm:h-14 sm:w-14">
                   {latest.images?.[0] ? (

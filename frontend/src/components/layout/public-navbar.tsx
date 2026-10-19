@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, Search, ChevronRight, Menu, X, Home, Zap, Images, Users, Phone, MessageCircle } from 'lucide-react';
+import { Building2, Search, ChevronRight, Menu, X, Home, Zap, Images, Users, Phone, MessageCircle, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: '/features', label: 'Features', icon: Zap },
   { href: '/gallery', label: 'Gallery', icon: Images },
   { href: '/about', label: 'About Us', icon: Users },
+  { href: '/about#company-profile', label: 'Company Profile', icon: FileText },
   { href: '/contact', label: 'Contact', icon: Phone },
 ];
 

@@ -20,6 +20,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { api, getImageUrl } from '@/lib/api';
+import { propertyHref } from '@/lib/property-url';
 import { useTenantResolution } from '@/hooks/use-tenant-resolution';
 import { CATEGORY_TYPES } from '@/lib/property-categories';
 import { PublicNavbar } from '@/components/layout/public-navbar';
@@ -266,7 +267,7 @@ export default function PropertiesPage() {
                 {properties.map((property: any) => {
                   const TypeIcon = getTypeIcon(property.type);
                   return (
-                    <Link key={property.id} href={`/properties/${property.id}`} className="group">
+                    <Link key={property.id} href={propertyHref(property)} className="group">
                       <div className="bg-white dark:bg-primary-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-primary-800">
                         <div className="relative h-52 overflow-hidden">
                           {property.images && property.images.length > 0 ? (
